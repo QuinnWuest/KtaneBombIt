@@ -55,6 +55,8 @@ public class BombItScript : MonoBehaviour
     private bool _actionExpected;
     private bool _actionSatisfied;
     private bool _solveItExpected;
+    private bool _wireCanStrike = true;
+    private Coroutine _wireStrikeDelay;
 
     private void Start()
     {
@@ -79,6 +81,8 @@ public class BombItScript : MonoBehaviour
 
     private bool PlayPress()
     {
+        if (_wireStrikeDelay != null)
+            StopCoroutine(_wireStrikeDelay);
         PlaySel.AddInteractionPunch(0.4f);
         if (_sequencePlaying)
             return false;
@@ -270,6 +274,8 @@ public class BombItScript : MonoBehaviour
             return false;
         if (!_actionExpected)
         {
+            if (!_wireCanStrike)
+                return false;
             DrumBeat.Stop();
             Module.HandleStrike();
             PlayVoiceline(false);
@@ -384,17 +390,22 @@ public class BombItScript : MonoBehaviour
             yield return new WaitForSeconds(0.9f);
             _actionExpected = true;
             yield return new WaitForSeconds(0.2f);
-            if (_isTilted && _requiredActions[_currentAction] == "Tilt It!" && !_actionSatisfied)
+            for (int i = 0; i < 10; i++)
             {
-                _actionSatisfied = true;
-                _inputActions.Add("Tilt It!");
-                Audio.PlaySoundAtTransform("Tilt", transform);
-                yield return null;
+                if (_isTilted && _requiredActions[_currentAction] == "Tilt It!" && !_actionSatisfied)
+                {
+                    _actionSatisfied = true;
+                    _inputActions.Add("Tilt It!");
+                    Audio.PlaySoundAtTransform("Tilt", transform);
+                }
+                yield return new WaitForSeconds(0.02f);
             }
-            yield return new WaitForSeconds(0.4f);
+            yield return new WaitForSeconds(0.2f);
             _actionExpected = false;
             if (!_actionSatisfied)
             {
+                if (_requiredActions[_currentAction] == "Snip It!")
+                    _wireStrikeDelay = StartCoroutine(WireStrikeDelay());
                 DrumBeat.Stop();
                 Module.HandleStrike();
                 PlayVoiceline(false);
@@ -420,6 +431,14 @@ public class BombItScript : MonoBehaviour
             _sequencePlaying = false;
             yield break;
         }
+        yield break;
+    }
+
+    private IEnumerator WireStrikeDelay()
+    {
+        _wireCanStrike = false;
+        yield return new WaitForSeconds(0.5f);
+        _wireCanStrike = true;
         yield break;
     }
 }

@@ -16,7 +16,6 @@ public class BombItScript : MonoBehaviour
     private static int _moduleIdCounter = 1;
     private bool _moduleSolved;
 
-    public AudioSource DrumBeat;
     public KMSelectable PlaySel;
     private Coroutine _bombItSequence;
     private int _actionLength;
@@ -87,6 +86,7 @@ public class BombItScript : MonoBehaviour
         if (_sequencePlaying)
             return false;
         GenerateSequence();
+        _solveItExpected = false;
         return false;
     }
 
@@ -125,7 +125,6 @@ public class BombItScript : MonoBehaviour
             return false;
         if (!_actionExpected && _sequencePlaying)
         {
-            DrumBeat.Stop();
             Module.HandleStrike();
             PlayVoiceline(false);
             _sequencePlaying = false;
@@ -137,7 +136,6 @@ public class BombItScript : MonoBehaviour
         _inputActions.Add("Solve It!");
         if (!_solveItExpected)
         {
-            DrumBeat.Stop();
             Module.HandleStrike();
             PlayVoiceline(false);
             _sequencePlaying = false;
@@ -147,7 +145,6 @@ public class BombItScript : MonoBehaviour
             return false;
         }
         _actionSatisfied = true;
-        DrumBeat.Stop();
         Module.HandlePass();
         PlayVoiceline(true);
         _moduleSolved = true;
@@ -163,7 +160,6 @@ public class BombItScript : MonoBehaviour
             return false;
         if (!_actionExpected && _sequencePlaying)
         {
-            DrumBeat.Stop();
             Module.HandleStrike();
             PlayVoiceline(false);
             _sequencePlaying = false;
@@ -175,13 +171,15 @@ public class BombItScript : MonoBehaviour
         _inputActions.Add("Press It!");
         if (_solveItExpected || _inputActions[_currentAction] != _requiredActions[_currentAction])
         {
-            DrumBeat.Stop();
             Module.HandleStrike();
             PlayVoiceline(false);
             _sequencePlaying = false;
             if (_bombItSequence != null)
                 StopCoroutine(_bombItSequence);
-            Debug.LogFormat("<Bomb It! #{0}> Attempted to Press It! When {1} was expected. Strike.", _moduleId, _requiredActions[_currentAction]);
+            if (_solveItExpected)
+                Debug.LogFormat("<Bomb It! #{0}> Attempted to Press It! When Solve It! was expected. Strike.", _moduleId);
+            else
+                Debug.LogFormat("<Bomb It! #{0}> Attempted to Press It! When {1} was expected. Strike.", _moduleId, _requiredActions[_currentAction]);
             return false;
         }
         _actionSatisfied = true;
@@ -220,7 +218,6 @@ public class BombItScript : MonoBehaviour
             return false;
         if (!_actionExpected && _sequencePlaying)
         {
-            DrumBeat.Stop();
             Module.HandleStrike();
             PlayVoiceline(false);
             _sequencePlaying = false;
@@ -232,13 +229,15 @@ public class BombItScript : MonoBehaviour
         _inputActions.Add("Flip It!");
         if (_solveItExpected || _inputActions[_currentAction] != _requiredActions[_currentAction])
         {
-            DrumBeat.Stop();
             Module.HandleStrike();
             PlayVoiceline(false);
             _sequencePlaying = false;
             if (_bombItSequence != null)
                 StopCoroutine(_bombItSequence);
-            Debug.LogFormat("<Bomb It! #{0}> Attempted to Flip It! When {1} was expected. Strike.", _moduleId, _requiredActions[_currentAction]);
+            if (_solveItExpected)
+                Debug.LogFormat("<Bomb It! #{0}> Attempted to Flip It! When Solve It! was expected. Strike.", _moduleId);
+            else
+                Debug.LogFormat("<Bomb It! #{0}> Attempted to Flip It! When {1} was expected. Strike.", _moduleId, _requiredActions[_currentAction]);
             return false;
         }
         _actionSatisfied = true;
@@ -276,7 +275,6 @@ public class BombItScript : MonoBehaviour
         {
             if (!_wireCanStrike)
                 return false;
-            DrumBeat.Stop();
             Module.HandleStrike();
             PlayVoiceline(false);
             _sequencePlaying = false;
@@ -288,13 +286,15 @@ public class BombItScript : MonoBehaviour
         _inputActions.Add("Snip It!");
         if (_solveItExpected || _inputActions[_currentAction] != _requiredActions[_currentAction])
         {
-            DrumBeat.Stop();
             Module.HandleStrike();
             PlayVoiceline(false);
             _sequencePlaying = false;
             if (_bombItSequence != null)
                 StopCoroutine(_bombItSequence);
-            Debug.LogFormat("<Bomb It! #{0}> Attempted to Snip It! When {1} was expected. Strike.", _moduleId, _requiredActions[_currentAction]);
+            if (_solveItExpected)
+                Debug.LogFormat("<Bomb It! #{0}> Attempted to Snip It! When Solve It! was expected. Strike.", _moduleId);
+            else
+                Debug.LogFormat("<Bomb It! #{0}> Attempted to Snip It! When {1} was expected. Strike.", _moduleId, _requiredActions[_currentAction]);
             return false;
         }
         Audio.PlaySoundAtTransform("Snip", transform);
@@ -327,7 +327,6 @@ public class BombItScript : MonoBehaviour
                     return;
                 if (!_actionExpected && _sequencePlaying)
                 {
-                    DrumBeat.Stop();
                     Module.HandleStrike();
                     PlayVoiceline(false);
                     _sequencePlaying = false;
@@ -339,13 +338,15 @@ public class BombItScript : MonoBehaviour
                 _inputActions.Add("Slide It!");
                 if (_solveItExpected || _inputActions[_currentAction] != _requiredActions[_currentAction])
                 {
-                    DrumBeat.Stop();
                     Module.HandleStrike();
                     PlayVoiceline(false);
                     _sequencePlaying = false;
                     if (_bombItSequence != null)
                         StopCoroutine(_bombItSequence);
-                    Debug.LogFormat("<Bomb It! #{0}> Attempted to Slide It! When {1} was expected. Strike.", _moduleId, _requiredActions[_currentAction]);
+                    if (_solveItExpected)
+                        Debug.LogFormat("<Bomb It! #{0}> Attempted to Slide It! When Solve It! was expected. Strike.", _moduleId);
+                    else
+                        Debug.LogFormat("<Bomb It! #{0}> Attempted to Slide It! When {1} was expected. Strike.", _moduleId, _requiredActions[_currentAction]);
                     return;
                 }
                 Audio.PlaySoundAtTransform("Slide", transform);
@@ -377,19 +378,53 @@ public class BombItScript : MonoBehaviour
         Debug.LogFormat("[Bomb It! #{0}] {1}", _moduleId, solve ? _solveLines[ix] : _strikeLines[ix]);
     }
 
+    private void PlayKick()
+    {
+        Audio.PlaySoundAtTransform("DrumKick", transform);
+    }
+    private void PlayHat()
+    {
+        Audio.PlaySoundAtTransform("DrumHat", transform);
+    }
+    private void PlaySnare()
+    {
+        Audio.PlaySoundAtTransform("DrumSnare", transform);
+    }
+
     private IEnumerator BombItSequence()
     {
         _sequencePlaying = true;
-        yield return new WaitForSeconds(0.1f);
-        DrumBeat.Play();
-        yield return new WaitForSeconds(2.3f);
+        PlayKick();
+        yield return new WaitForSeconds(0.3f);
+        PlayHat();
+        yield return new WaitForSeconds(0.3f);
+        PlaySnare();
+        yield return new WaitForSeconds(0.3f);
+        PlayHat();
+        yield return new WaitForSeconds(0.3f);
+        PlayKick();
+        yield return new WaitForSeconds(0.3f);
+        PlayHat();
+        yield return new WaitForSeconds(0.3f);
+        PlaySnare();
+        yield return new WaitForSeconds(0.3f);
+        PlayHat();
+        yield return new WaitForSeconds(0.3f);
         while (_currentAction != _actionLength)
         {
+            PlayKick();
             Audio.PlaySoundAtTransform(_requiredActions[_currentAction], transform);
             Debug.LogFormat("[Bomb It! #{0}] {1}", _moduleId, _requiredActions[_currentAction]);
-            yield return new WaitForSeconds(0.9f);
+            yield return new WaitForSeconds(0.3f);
+            PlayHat();
+            yield return new WaitForSeconds(0.3f);
+            PlaySnare();
+            yield return new WaitForSeconds(0.3f);
+            PlayHat();
+            yield return new WaitForSeconds(0.1f);
             _actionExpected = true;
             yield return new WaitForSeconds(0.2f);
+            PlayKick();
             for (int i = 0; i < 10; i++)
             {
                 if (_isTilted && _requiredActions[_currentAction] == "Tilt It!" && !_actionSatisfied)
@@ -400,32 +435,44 @@ public class BombItScript : MonoBehaviour
                 }
                 yield return new WaitForSeconds(0.02f);
             }
-            yield return new WaitForSeconds(0.2f);
+            yield return new WaitForSeconds(0.1f);
             _actionExpected = false;
             if (!_actionSatisfied)
             {
                 if (_requiredActions[_currentAction] == "Snip It!")
                     _wireStrikeDelay = StartCoroutine(WireStrikeDelay());
-                DrumBeat.Stop();
                 Module.HandleStrike();
                 PlayVoiceline(false);
                 _sequencePlaying = false;
                 yield break;
             }
             _actionSatisfied = false;
-            yield return new WaitForSeconds(0.9f);
+            PlayHat();
+            yield return new WaitForSeconds(0.3f);
+            PlaySnare();
+            yield return new WaitForSeconds(0.3f);
+            PlayHat();
+            yield return new WaitForSeconds(0.3f);
             _currentAction++;
         }
         _solveItExpected = true;
         Audio.PlaySoundAtTransform("Solve It!", transform);
         Debug.LogFormat("[Bomb It! #{0}] Solve It!", _moduleId);
-        yield return new WaitForSeconds(0.6f);
+        PlayKick();
+        yield return new WaitForSeconds(0.3f);
+        PlayHat();
+        yield return new WaitForSeconds(0.3f);
+        PlaySnare();
         _actionExpected = true;
-        yield return new WaitForSeconds(0.8f);
+        yield return new WaitForSeconds(0.3f);
+        PlayHat();
+        yield return new WaitForSeconds(0.3f);
+        PlayKick();
+        yield return new WaitForSeconds(0.2f);
         _actionExpected = false;
         if (!_actionSatisfied)
         {
-            DrumBeat.Stop();
+            _solveItExpected = false;
             Module.HandleStrike();
             PlayVoiceline(false);
             _sequencePlaying = false;

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using UnityEngine;
 using Rnd = UnityEngine.Random;
@@ -11,6 +12,7 @@ public class BombItScript : MonoBehaviour
     public KMBombModule Module;
     public KMBombInfo BombInfo;
     public KMAudio Audio;
+    public KMModSettings Settings;
 
     private int _moduleId;
     private static int _moduleIdCounter = 1;
@@ -23,7 +25,8 @@ public class BombItScript : MonoBehaviour
     private List<string> _requiredActions = new List<string>();
     private List<string> _inputActions = new List<string>();
     private static readonly string[] _actionNames = new string[] { "Press It!", "Tilt It!", "Flip It!", "Snip It!", "Slide It!" };
-    private static readonly string[] _solveLines = new string[] { "POGGERS!", "You win, buddy!", "Sick solo, dude!", "High score!", "Tell your experts... if you have any!"};
+    private static readonly string[] _japaneseActionNames = new string[] { "押して！", "傾けて！", "切り替えて！", "切って！", "スライドして！" };
+    private static readonly string[] _solveLines = new string[] { "POGGERS!", "You win, buddy!", "Sick solo, dude!", "High score!", "Tell your experts... if you have any!" };
     private static readonly string[] _strikeLines = new string[] { "YOWWWWW!", "Bummer.", "You blew it, dude.", "Do it the same, but, uh, better.", "Strikerooni, frienderini!" };
 
     // Solve It!
@@ -57,10 +60,17 @@ public class BombItScript : MonoBehaviour
     private bool _wireCanStrike = true;
     private Coroutine _wireStrikeDelay;
 
+    private bool _japanese;
+    public TextMesh BombItText;
+
+    public class BombItSettings
+    {
+        public bool UseJapaneseSounds;
+    }
+
     private void Start()
     {
         _moduleId = _moduleIdCounter++;
-        Debug.LogFormat("[Bomb It! #{0}] Welcome to Bomb It!", _moduleId);
         PlaySel.OnInteract += PlayPress;
         StatusLightSel.OnInteract += StatusLightPress;
         ButtonSel.OnInteract += ButtonPress;
@@ -69,6 +79,21 @@ public class BombItScript : MonoBehaviour
         WireSel.OnInteract += WirePress;
         SliderSel.OnInteract += SliderPress;
         SliderSel.OnInteractEnded += SliderRelease;
+        BombItSettings set = JsonUtility.FromJson<BombItSettings>(Settings.Settings);
+        if (set == null)
+            set.UseJapaneseSounds = false;
+        else
+            _japanese = set.UseJapaneseSounds;
+        if (_japanese)
+        {
+            BombItText.text = " 爆弾！";
+            Debug.LogFormat("[Bomb It! #{0}] 爆弾へようこそ！", _moduleId);
+        }
+        else
+        {
+            BombItText.text = "Bomb It!";
+            Debug.LogFormat("[Bomb It! #{0}] Welcome to Bomb It!", _moduleId);
+        }
         for (int i = 0; i < SliderRegionSels.Length; i++)
             SliderRegionSels[i].OnHighlight += SliderHighlight(i);
     }
@@ -126,7 +151,7 @@ public class BombItScript : MonoBehaviour
         if (!_actionExpected && _sequencePlaying)
         {
             Module.HandleStrike();
-            PlayVoiceline(false);
+            PlayEndingVoiceLine(false);
             _sequencePlaying = false;
             if (_bombItSequence != null)
                 StopCoroutine(_bombItSequence);
@@ -137,7 +162,7 @@ public class BombItScript : MonoBehaviour
         if (!_solveItExpected)
         {
             Module.HandleStrike();
-            PlayVoiceline(false);
+            PlayEndingVoiceLine(false);
             _sequencePlaying = false;
             if (_bombItSequence != null)
                 StopCoroutine(_bombItSequence);
@@ -146,7 +171,7 @@ public class BombItScript : MonoBehaviour
         }
         _actionSatisfied = true;
         Module.HandlePass();
-        PlayVoiceline(true);
+        PlayEndingVoiceLine(true);
         _moduleSolved = true;
         return false;
     }
@@ -161,7 +186,7 @@ public class BombItScript : MonoBehaviour
         if (!_actionExpected && _sequencePlaying)
         {
             Module.HandleStrike();
-            PlayVoiceline(false);
+            PlayEndingVoiceLine(false);
             _sequencePlaying = false;
             if (_bombItSequence != null)
                 StopCoroutine(_bombItSequence);
@@ -172,7 +197,7 @@ public class BombItScript : MonoBehaviour
         if (_solveItExpected || _inputActions[_currentAction] != _requiredActions[_currentAction])
         {
             Module.HandleStrike();
-            PlayVoiceline(false);
+            PlayEndingVoiceLine(false);
             _sequencePlaying = false;
             if (_bombItSequence != null)
                 StopCoroutine(_bombItSequence);
@@ -219,7 +244,7 @@ public class BombItScript : MonoBehaviour
         if (!_actionExpected && _sequencePlaying)
         {
             Module.HandleStrike();
-            PlayVoiceline(false);
+            PlayEndingVoiceLine(false);
             _sequencePlaying = false;
             if (_bombItSequence != null)
                 StopCoroutine(_bombItSequence);
@@ -230,7 +255,7 @@ public class BombItScript : MonoBehaviour
         if (_solveItExpected || _inputActions[_currentAction] != _requiredActions[_currentAction])
         {
             Module.HandleStrike();
-            PlayVoiceline(false);
+            PlayEndingVoiceLine(false);
             _sequencePlaying = false;
             if (_bombItSequence != null)
                 StopCoroutine(_bombItSequence);
@@ -276,7 +301,7 @@ public class BombItScript : MonoBehaviour
             if (!_wireCanStrike)
                 return false;
             Module.HandleStrike();
-            PlayVoiceline(false);
+            PlayEndingVoiceLine(false);
             _sequencePlaying = false;
             if (_bombItSequence != null)
                 StopCoroutine(_bombItSequence);
@@ -287,7 +312,7 @@ public class BombItScript : MonoBehaviour
         if (_solveItExpected || _inputActions[_currentAction] != _requiredActions[_currentAction])
         {
             Module.HandleStrike();
-            PlayVoiceline(false);
+            PlayEndingVoiceLine(false);
             _sequencePlaying = false;
             if (_bombItSequence != null)
                 StopCoroutine(_bombItSequence);
@@ -300,6 +325,14 @@ public class BombItScript : MonoBehaviour
         Audio.PlaySoundAtTransform("Snip", transform);
         _actionSatisfied = true;
         return false;
+    }
+
+    private void PlayActionVoiceLine(string soundName)
+    {
+        string str = soundName;
+        if (_japanese)
+            str += " JA";
+        Audio.PlaySoundAtTransform(str, transform);
     }
 
     private bool SliderPress()
@@ -328,7 +361,7 @@ public class BombItScript : MonoBehaviour
                 if (!_actionExpected && _sequencePlaying)
                 {
                     Module.HandleStrike();
-                    PlayVoiceline(false);
+                    PlayEndingVoiceLine(false);
                     _sequencePlaying = false;
                     if (_bombItSequence != null)
                         StopCoroutine(_bombItSequence);
@@ -339,7 +372,7 @@ public class BombItScript : MonoBehaviour
                 if (_solveItExpected || _inputActions[_currentAction] != _requiredActions[_currentAction])
                 {
                     Module.HandleStrike();
-                    PlayVoiceline(false);
+                    PlayEndingVoiceLine(false);
                     _sequencePlaying = false;
                     if (_bombItSequence != null)
                         StopCoroutine(_bombItSequence);
@@ -371,10 +404,13 @@ public class BombItScript : MonoBehaviour
         SliderObj.transform.localPosition = new Vector3(_currentSliderPos == 0 ? -0.02f : 0.02f, 0f, 0f);
     }
 
-    private void PlayVoiceline(bool solve)
+    private void PlayEndingVoiceLine(bool solve)
     {
         int ix = Rnd.Range(0, 5);
-        Audio.PlaySoundAtTransform((solve ? "Solve" : "Strike") + (ix + 1), transform);
+        string str = (solve ? "Solve" : "Strike") + (ix + 1);
+        if (_japanese)
+            str += " JA";
+        Audio.PlaySoundAtTransform(str, transform);
         Debug.LogFormat("[Bomb It! #{0}] {1}", _moduleId, solve ? _solveLines[ix] : _strikeLines[ix]);
     }
 
@@ -413,8 +449,9 @@ public class BombItScript : MonoBehaviour
         while (_currentAction != _actionLength)
         {
             PlayKick();
-            Audio.PlaySoundAtTransform(_requiredActions[_currentAction], transform);
-            Debug.LogFormat("[Bomb It! #{0}] {1}", _moduleId, _requiredActions[_currentAction]);
+            PlayActionVoiceLine(_requiredActions[_currentAction]);
+            string logStr = _japanese ? _japaneseActionNames[Array.IndexOf(_actionNames, _requiredActions[_currentAction])] : _requiredActions[_currentAction];
+            Debug.LogFormat("[Bomb It! #{0}] {1}", _moduleId, logStr);
             yield return new WaitForSeconds(0.3f);
             PlayHat();
             yield return new WaitForSeconds(0.3f);
@@ -442,7 +479,7 @@ public class BombItScript : MonoBehaviour
                 if (_requiredActions[_currentAction] == "Snip It!")
                     _wireStrikeDelay = StartCoroutine(WireStrikeDelay());
                 Module.HandleStrike();
-                PlayVoiceline(false);
+                PlayEndingVoiceLine(false);
                 _sequencePlaying = false;
                 yield break;
             }
@@ -456,8 +493,11 @@ public class BombItScript : MonoBehaviour
             _currentAction++;
         }
         _solveItExpected = true;
-        Audio.PlaySoundAtTransform("Solve It!", transform);
-        Debug.LogFormat("[Bomb It! #{0}] Solve It!", _moduleId);
+        string str = "Solve It!";
+        if (_japanese)
+            str += " JA";
+        Audio.PlaySoundAtTransform(str, transform);
+        Debug.LogFormat("[Bomb It! #{0}] {1}", _moduleId, _japanese ? "解除！" : "Solve It!");
         PlayKick();
         yield return new WaitForSeconds(0.3f);
         PlayHat();
@@ -474,7 +514,7 @@ public class BombItScript : MonoBehaviour
         {
             _solveItExpected = false;
             Module.HandleStrike();
-            PlayVoiceline(false);
+            PlayEndingVoiceLine(false);
             _sequencePlaying = false;
             yield break;
         }

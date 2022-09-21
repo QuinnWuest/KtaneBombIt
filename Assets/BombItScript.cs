@@ -12,11 +12,12 @@ public class BombItScript : MonoBehaviour
     public KMBombModule Module;
     public KMBombInfo BombInfo;
     public KMAudio Audio;
-    public KMModSettings Settings;
 
     private int _moduleId;
     private static int _moduleIdCounter = 1;
     private bool _moduleSolved;
+
+    public string Language;
 
     public KMSelectable PlaySel;
     private Coroutine _bombItSequence;
@@ -25,10 +26,11 @@ public class BombItScript : MonoBehaviour
     private List<string> _requiredActions = new List<string>();
     private List<string> _inputActions = new List<string>();
     private static readonly string[] _actionNames = new string[] { "Press It!", "Tilt It!", "Flip It!", "Snip It!", "Slide It!" };
-    private static readonly string[] _japaneseActionNames = new string[] { "押して！", "傾けて！", "切り替えて！", "切って！", "スライドして！" };
     private static readonly string[] _solveLines = new string[] { "POGGERS!", "You win, buddy!", "Sick solo, dude!", "High score!", "Tell your experts... if you have any!" };
     private static readonly string[] _strikeLines = new string[] { "YOWWWWW!", "Bummer.", "You blew it, dude.", "Do it the same, but, uh, better.", "Strikerooni, frienderini!" };
 
+    private static readonly string[] _japaneseActionNames = new string[] { "押して！", "傾けて！", "切り替えて！", "切って！", "スライドして！" };
+    
     // Solve It!
     public KMSelectable StatusLightSel;
     // Tilt It!
@@ -61,7 +63,6 @@ public class BombItScript : MonoBehaviour
     private Coroutine _wireStrikeDelay;
 
     private bool _japanese;
-    public TextMesh BombItText;
 
     public class BombItSettings
     {
@@ -79,23 +80,23 @@ public class BombItScript : MonoBehaviour
         WireSel.OnInteract += WirePress;
         SliderSel.OnInteract += SliderPress;
         SliderSel.OnInteractEnded += SliderRelease;
-        BombItSettings set = JsonUtility.FromJson<BombItSettings>(Settings.Settings);
-        if (set == null)
-            set.UseJapaneseSounds = false;
-        else
-            _japanese = set.UseJapaneseSounds;
-        if (_japanese)
+
+        if (Language != null)
         {
-            BombItText.text = " 爆弾！";
-            Debug.LogFormat("[Bomb It! #{0}] 爆弾へようこそ！", _moduleId);
+            if (Language == "Japanese")
+                _japanese = true;
         }
-        else
-        {
-            BombItText.text = "Bomb It!";
-            Debug.LogFormat("[Bomb It! #{0}] Welcome to Bomb It!", _moduleId);
-        }
+        InitialLog();
         for (int i = 0; i < SliderRegionSels.Length; i++)
             SliderRegionSels[i].OnHighlight += SliderHighlight(i);
+    }
+
+    private void InitialLog()
+    {
+        if (_japanese)
+            Debug.LogFormat("[Bomb It! #{0}] 爆弾へようこそ！", _moduleId);
+        else
+            Debug.LogFormat("[Bomb It! #{0}] Welcome to Bomb It!", _moduleId);
     }
 
     private void Update()
@@ -327,13 +328,7 @@ public class BombItScript : MonoBehaviour
         return false;
     }
 
-    private void PlayActionVoiceLine(string soundName)
-    {
-        string str = soundName;
-        if (_japanese)
-            str += " JA";
-        Audio.PlaySoundAtTransform(str, transform);
-    }
+    
 
     private bool SliderPress()
     {
@@ -404,16 +399,6 @@ public class BombItScript : MonoBehaviour
         SliderObj.transform.localPosition = new Vector3(_currentSliderPos == 0 ? -0.02f : 0.02f, 0f, 0f);
     }
 
-    private void PlayEndingVoiceLine(bool solve)
-    {
-        int ix = Rnd.Range(0, 5);
-        string str = (solve ? "Solve" : "Strike") + (ix + 1);
-        if (_japanese)
-            str += " JA";
-        Audio.PlaySoundAtTransform(str, transform);
-        Debug.LogFormat("[Bomb It! #{0}] {1}", _moduleId, solve ? _solveLines[ix] : _strikeLines[ix]);
-    }
-
     private void PlayKick()
     {
         Audio.PlaySoundAtTransform("DrumKick", transform);
@@ -450,8 +435,7 @@ public class BombItScript : MonoBehaviour
         {
             PlayKick();
             PlayActionVoiceLine(_requiredActions[_currentAction]);
-            string logStr = _japanese ? _japaneseActionNames[Array.IndexOf(_actionNames, _requiredActions[_currentAction])] : _requiredActions[_currentAction];
-            Debug.LogFormat("[Bomb It! #{0}] {1}", _moduleId, logStr);
+            Debug.LogFormat("[Bomb It! #{0}] {1}", _moduleId, GetAction(_requiredActions[_currentAction]));
             yield return new WaitForSeconds(0.3f);
             PlayHat();
             yield return new WaitForSeconds(0.3f);
@@ -497,7 +481,7 @@ public class BombItScript : MonoBehaviour
         if (_japanese)
             str += " JA";
         Audio.PlaySoundAtTransform(str, transform);
-        Debug.LogFormat("[Bomb It! #{0}] {1}", _moduleId, _japanese ? "解除！" : "Solve It!");
+        Debug.LogFormat("[Bomb It! #{0}] {1}", _moduleId, GetSolveAction());
         PlayKick();
         yield return new WaitForSeconds(0.3f);
         PlayHat();
@@ -519,6 +503,39 @@ public class BombItScript : MonoBehaviour
             yield break;
         }
         yield break;
+    }
+
+    private string GetSolveAction()
+    {
+        if (_japanese)
+            return "解除！";
+        return "Solve It!";
+    }
+
+    private string GetAction(string action)
+    {
+        string a = action;
+        if (_japanese)
+            a = _japaneseActionNames[Array.IndexOf(_actionNames, action)];
+        return a;
+    }
+
+    private void PlayActionVoiceLine(string soundName)
+    {
+        string str = soundName;
+        if (_japanese)
+            str += " JA";
+        Audio.PlaySoundAtTransform(str, transform);
+    }
+
+    private void PlayEndingVoiceLine(bool solve)
+    {
+        int ix = Rnd.Range(0, 5);
+        string str = (solve ? "Solve" : "Strike") + (ix + 1);
+        if (_japanese)
+            str += " JA";
+        Audio.PlaySoundAtTransform(str, transform);
+        Debug.LogFormat("[Bomb It! #{0}] {1}", _moduleId, solve ? _solveLines[ix] : _strikeLines[ix]);
     }
 
     private IEnumerator WireStrikeDelay()

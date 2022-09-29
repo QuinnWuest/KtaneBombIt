@@ -323,7 +323,7 @@ public class BombItScript : MonoBehaviour
             if (_solveItExpected)
                 Debug.LogFormat("<Bomb It!{0} #{1}> Attempted to Snip It! When Solve It! was expected. Strike.", _japanese ? " JA" : "", _moduleId);
             else
-                Debug.LogFormat("<Bomb It!{0} #{1}> Attempted to Snip It! When {1} was expected. Strike.", _japanese ? " JA" : "", _moduleId, _requiredActions[_currentAction]);
+                Debug.LogFormat("<Bomb It!{0} #{1}> Attempted to Snip It! When {2} was expected. Strike.", _japanese ? " JA" : "", _moduleId, _requiredActions[_currentAction]);
             return false;
         }
         Audio.PlaySoundAtTransform("Snip", transform);
@@ -378,7 +378,7 @@ public class BombItScript : MonoBehaviour
                     if (_solveItExpected)
                         Debug.LogFormat("<Bomb It!{0} #{1}> Attempted to Slide It! When Solve It! was expected. Strike.", _japanese ? " JA" : "", _moduleId);
                     else
-                        Debug.LogFormat("<Bomb It!{0} #{1}> Attempted to Slide It! When {1} was expected. Strike.", _japanese ? " JA" : "", _moduleId, _requiredActions[_currentAction]);
+                        Debug.LogFormat("<Bomb It!{0} #{1}> Attempted to Slide It! When {2} was expected. Strike.", _japanese ? " JA" : "", _moduleId, _requiredActions[_currentAction]);
                     return;
                 }
                 Audio.PlaySoundAtTransform("Slide", transform);

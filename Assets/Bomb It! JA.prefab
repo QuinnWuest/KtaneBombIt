@@ -322,7 +322,7 @@ GameObject:
   - component: {fileID: 114898504326017304}
   - component: {fileID: 114533584948849438}
   m_Layer: 0
-  m_Name: Bomb It! (JA)
+  m_Name: Bomb It! JA
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

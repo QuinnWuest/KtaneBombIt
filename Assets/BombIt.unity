@@ -390,10 +390,6 @@ Prefab:
       propertyPath: m_RootOrder
       value: 4
       objectReference: {fileID: 0}
-    - target: {fileID: 1569542634414780, guid: e5d248042d1958641920b2d00482d38d, type: 2}
-      propertyPath: m_Name
-      value: Bomb It! JA
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: e5d248042d1958641920b2d00482d38d, type: 2}
   m_IsPrefabParent: 0

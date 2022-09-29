@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
 using UnityEngine;
 using Rnd = UnityEngine.Random;
 
@@ -451,7 +449,10 @@ public class BombItScript : MonoBehaviour
             _actionExpected = true;
             yield return new WaitForSeconds(0.2f);
             PlayKick();
-            for (int i = 0; i < 10; i++)
+            int delay = 10;
+            if (TwitchPlaysActive)
+                delay += 600;
+            for (int i = 0; i < delay; i++)
             {
                 if (_isTilted && _requiredActions[_currentAction] == "Tilt It!" && !_actionSatisfied)
                 {
@@ -549,5 +550,149 @@ public class BombItScript : MonoBehaviour
         yield return new WaitForSeconds(0.5f);
         _wireCanStrike = true;
         yield break;
+    }
+
+    //twitch plays
+    private bool TwitchPlaysActive;
+    #pragma warning disable 414
+    private readonly string TwitchHelpMessage = @"!{0} play [Presses the play button] | !{0} flip/slide/press/snip/tilt [Performs the specified action] | !{0} sl [Presses the status light] | On Twitch Plays there is an extra 12 seconds of leniency for performing actions";
+    #pragma warning restore 414
+
+    private IEnumerator ProcessTwitchCommand(string command)
+    {
+        command = command.ToLowerInvariant();
+        switch (command)
+        {
+            case "play":
+            case "start":
+                if (_sequencePlaying)
+                {
+                    yield return "sendtochaterror The module has already been started!";
+                    yield break;
+                }
+                yield return null;
+                yield return "strike";
+                PlaySel.OnInteract();
+                break;
+            case "flip":
+                if (!_sequencePlaying)
+                {
+                    yield return "sendtochaterror The module must be started first!";
+                    yield break;
+                }
+                yield return null;
+                SwitchSel.OnInteract();
+                break;
+            case "slide":
+                if (!_sequencePlaying)
+                {
+                    yield return "sendtochaterror The module must be started first!";
+                    yield break;
+                }
+                yield return null;
+                SliderSel.OnInteract();
+                if (_currentSliderPos == 0)
+                    SliderRegionSels[1].OnHighlight();
+                else
+                    SliderRegionSels[0].OnHighlight();
+                SliderSel.OnInteractEnded();
+                break;
+            case "snip":
+                if (!_sequencePlaying)
+                {
+                    yield return "sendtochaterror The module must be started first!";
+                    yield break;
+                }
+                if (_isSnipped)
+                {
+                    yield return "sendtochaterror The wire has already been snipped!";
+                    yield break;
+                }
+                yield return null;
+                WireSel.OnInteract();
+                break;
+            case "press":
+                if (!_sequencePlaying)
+                {
+                    yield return "sendtochaterror The module must be started first!";
+                    yield break;
+                }
+                yield return null;
+                ButtonSel.OnInteract();
+                ButtonSel.OnInteractEnded();
+                break;
+            case "sl":
+            case "status light":
+                if (!_sequencePlaying)
+                {
+                    yield return "sendtochaterror The module must be started first!";
+                    yield break;
+                }
+                yield return null;
+                StatusLightSel.OnInteract();
+                break;
+        }
+    }
+
+    private IEnumerator TwitchHandleForcedSolve()
+    {
+        if (!_sequencePlaying)
+            PlaySel.OnInteract();
+        while (!_moduleSolved)
+        {
+            while (!_actionExpected || _actionSatisfied) yield return null;
+            if (_solveItExpected)
+                StatusLightSel.OnInteract();
+            else
+            {
+                switch (_requiredActions[_currentAction])
+                {
+                    case "Press It!":
+                        ButtonSel.OnInteract();
+                        ButtonSel.OnInteractEnded();
+                        break;
+                    case "Flip It!":
+                        SwitchSel.OnInteract();
+                        break;
+                    case "Snip It!":
+                        WireSel.OnInteract();
+                        break;
+                    case "Slide It!":
+                        SliderSel.OnInteract();
+                        if (_currentSliderPos == 0)
+                            SliderRegionSels[1].OnHighlight();
+                        else
+                            SliderRegionSels[0].OnHighlight();
+                        SliderSel.OnInteractEnded();
+                        break;
+                    default:
+                        Transform bomb;
+                        if (Application.isEditor)
+                            bomb = Module.transform.parent.parent;
+                        else
+                            bomb = Module.transform.parent;
+                        float t = 0;
+                        while (!_isTilted)
+                        {
+                            yield return null;
+                            t += Time.deltaTime;
+                            Vector3 angle = bomb.localEulerAngles;
+                            angle.x += 2f;
+                            bomb.localEulerAngles = angle;
+                        }
+                        while (_actionExpected) yield return null;
+                        float t2 = 0f;
+                        while (t2 < t)
+                        {
+                            yield return null;
+                            t2 += Time.deltaTime;
+                            Vector3 angle = bomb.localEulerAngles;
+                            angle.x -= 2f;
+                            bomb.localEulerAngles = angle;
+                        }
+                        break;
+                }
+            }
+        }
     }
 }

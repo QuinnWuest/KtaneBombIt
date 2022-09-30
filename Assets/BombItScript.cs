@@ -136,6 +136,8 @@ public class BombItScript : MonoBehaviour
         _inputActions = new List<string>();
         _actionLength = Rnd.Range(6, 10);
         _currentAction = 0;
+        _actionSatisfied = false;
+        _actionExpected = false;
         for (int i = 0; i < _actionLength; i++)
         {
             var action = _actionNames[Rnd.Range(0, _actionNames.Length)];
@@ -452,7 +454,7 @@ public class BombItScript : MonoBehaviour
             PlayKick();
             PlayActionVoiceLine(_requiredActions[_currentAction]);
             Debug.LogFormat("[Bomb It!{0} #{1}] {2}", _japanese ? " JA" : "", _moduleId, GetAction(_requiredActions[_currentAction]));
-            if (tpAPI != null)
+            if (tpAPI != null && !Autosolved)
                 tpAPI["ircConnectionSendMessage"] = "Module " + GetModuleCode() + " (Bomb It!" + (_japanese ? " JA" : "") + ") says: " + GetAction(_requiredActions[_currentAction]);
             yield return new WaitForSeconds(0.3f);
             PlayHat();
@@ -503,7 +505,7 @@ public class BombItScript : MonoBehaviour
             str += " JA";
         Audio.PlaySoundAtTransform(str, transform);
         Debug.LogFormat("[Bomb It!{0} #{1}] {2}", _japanese ? " JA" : "", _moduleId, GetSolveAction());
-        if (tpAPI != null)
+        if (tpAPI != null && !Autosolved)
             tpAPI["ircConnectionSendMessage"] = "Module " + GetModuleCode() + " (Bomb It!" + (_japanese ? " JA" : "") + ") says: " + GetSolveAction();
         PlayKick();
         yield return new WaitForSeconds(0.3f);
@@ -690,6 +692,7 @@ public class BombItScript : MonoBehaviour
                         break;
                     default:
                         Transform mod = Module.transform;
+                        Vector3 origAngles = mod.localEulerAngles;
                         float t = 0;
                         while (!_isTilted)
                         {
@@ -709,6 +712,7 @@ public class BombItScript : MonoBehaviour
                             angle.x -= 2f;
                             mod.localEulerAngles = angle;
                         }
+                        mod.localEulerAngles = origAngles;
                         break;
                 }
             }

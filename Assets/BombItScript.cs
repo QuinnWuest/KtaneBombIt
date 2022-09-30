@@ -57,6 +57,7 @@ public class BombItScript : MonoBehaviour
     private bool _sequencePlaying;
     private bool _actionExpected;
     private bool _actionSatisfied;
+    private bool _actionExpectedAutosolve;
     private bool _solveItExpected;
     private bool _wireCanStrike = true;
     private Coroutine _wireStrikeDelay;
@@ -138,6 +139,7 @@ public class BombItScript : MonoBehaviour
         _currentAction = 0;
         _actionSatisfied = false;
         _actionExpected = false;
+        _actionExpectedAutosolve = false;
         for (int i = 0; i < _actionLength; i++)
         {
             var action = _actionNames[Rnd.Range(0, _actionNames.Length)];
@@ -185,6 +187,7 @@ public class BombItScript : MonoBehaviour
         }
         _actionSatisfied = true;
         _actionExpected = false;
+        _actionExpectedAutosolve = false;
         Module.HandlePass();
         PlayEndingVoiceLine(true);
         _moduleSolved = true;
@@ -224,6 +227,7 @@ public class BombItScript : MonoBehaviour
         }
         _actionSatisfied = true;
         _actionExpected = false;
+        _actionExpectedAutosolve = false;
         Audio.PlaySoundAtTransform("Press", transform);
         return false;
     }
@@ -283,6 +287,7 @@ public class BombItScript : MonoBehaviour
         }
         _actionSatisfied = true;
         _actionExpected = false;
+        _actionExpectedAutosolve = false;
         Audio.PlaySoundAtTransform("Flip", transform);
         return false;
     }
@@ -342,6 +347,7 @@ public class BombItScript : MonoBehaviour
         Audio.PlaySoundAtTransform("Snip", transform);
         _actionSatisfied = true;
         _actionExpected = false;
+        _actionExpectedAutosolve = false;
         return false;
     }
 
@@ -397,6 +403,7 @@ public class BombItScript : MonoBehaviour
                 Audio.PlaySoundAtTransform("Slide", transform);
                 _actionSatisfied = true;
                 _actionExpected = false;
+                _actionExpectedAutosolve = false;
                 return;
             }
         };
@@ -465,6 +472,7 @@ public class BombItScript : MonoBehaviour
             yield return new WaitForSeconds(0.1f);
             _actionExpected = true;
             yield return new WaitForSeconds(0.2f);
+            _actionExpectedAutosolve = true;
             PlayKick();
             int delay = 10;
             if (TwitchPlaysActive && !Autosolved)
@@ -481,6 +489,7 @@ public class BombItScript : MonoBehaviour
             }
             yield return new WaitForSeconds(0.1f);
             _actionExpected = false;
+            _actionExpectedAutosolve = false;
             if (!_actionSatisfied)
             {
                 if (_requiredActions[_currentAction] == "Snip It!")
@@ -517,11 +526,13 @@ public class BombItScript : MonoBehaviour
         PlayHat();
         yield return new WaitForSeconds(0.3f);
         PlayKick();
+        _actionExpectedAutosolve = true;
         if (TwitchPlaysActive && !Autosolved)
             yield return new WaitForSeconds(8.2f);
         else
             yield return new WaitForSeconds(0.2f);
         _actionExpected = false;
+        _actionExpectedAutosolve = false;
         if (!_actionSatisfied)
         {
             _solveItExpected = false;
@@ -666,6 +677,7 @@ public class BombItScript : MonoBehaviour
         while (!_moduleSolved)
         {
             while (!_actionExpected || _actionSatisfied) yield return null;
+            while (!_actionExpectedAutosolve && !_solveItExpected && _requiredActions[_currentAction] != "Tilt It!") yield return null;
             if (_solveItExpected)
                 StatusLightSel.OnInteract();
             else

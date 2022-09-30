@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
 using UnityEngine;
 using Rnd = UnityEngine.Random;
 
@@ -15,6 +13,7 @@ public class BombItScript : MonoBehaviour
 
     private int _moduleId;
     private static int _moduleIdCounter = 1;
+    private static int _moduleJPIdCounter = 1;
     private bool _moduleSolved;
 
     public string Language;
@@ -71,7 +70,6 @@ public class BombItScript : MonoBehaviour
 
     private void Start()
     {
-        _moduleId = _moduleIdCounter++;
         PlaySel.OnInteract += PlayPress;
         StatusLightSel.OnInteract += StatusLightPress;
         ButtonSel.OnInteract += ButtonPress;
@@ -81,14 +79,27 @@ public class BombItScript : MonoBehaviour
         SliderSel.OnInteract += SliderPress;
         SliderSel.OnInteractEnded += SliderRelease;
 
-        if (Language != null)
+        if (Language == "Japanese")
         {
-            if (Language == "Japanese")
-                _japanese = true;
+            _japanese = true;
+            _moduleId = _moduleJPIdCounter++;
         }
+        else
+            _moduleId = _moduleIdCounter++;
         InitialLog();
         for (int i = 0; i < SliderRegionSels.Length; i++)
             SliderRegionSels[i].OnHighlight += SliderHighlight(i);
+
+        Module.OnActivate += Activate;
+    }
+
+    private void Activate()
+    {
+        if (TwitchPlaysActive && !Application.isEditor)
+        {
+            GameObject tpAPIGameObject = GameObject.Find("TwitchPlays_Info");
+            tpAPI = tpAPIGameObject.GetComponent<IDictionary<string, object>>();
+        }
     }
 
     private void InitialLog()
@@ -96,7 +107,7 @@ public class BombItScript : MonoBehaviour
         if (_japanese)
             Debug.LogFormat("[Bomb It!{0} #{1}] 爆弾へようこそ！", _japanese ? " JA" : "", _moduleId);
         else
-            Debug.LogFormat("[Bomb It!{0} #{0}] Welcome to Bomb It!", _japanese ? " JA" : "", _moduleId);
+            Debug.LogFormat("[Bomb It!{0} #{1}] Welcome to Bomb It!", _japanese ? " JA" : "", _moduleId);
     }
 
     private void Update()
@@ -125,6 +136,8 @@ public class BombItScript : MonoBehaviour
         _inputActions = new List<string>();
         _actionLength = Rnd.Range(6, 10);
         _currentAction = 0;
+        _actionSatisfied = false;
+        _actionExpected = false;
         for (int i = 0; i < _actionLength; i++)
         {
             var action = _actionNames[Rnd.Range(0, _actionNames.Length)];
@@ -441,6 +454,8 @@ public class BombItScript : MonoBehaviour
             PlayKick();
             PlayActionVoiceLine(_requiredActions[_currentAction]);
             Debug.LogFormat("[Bomb It!{0} #{1}] {2}", _japanese ? " JA" : "", _moduleId, GetAction(_requiredActions[_currentAction]));
+            if (tpAPI != null && !Autosolved)
+                tpAPI["ircConnectionSendMessage"] = "Module " + GetModuleCode() + " (Bomb It!" + (_japanese ? " JA" : "") + ") says: " + GetAction(_requiredActions[_currentAction]);
             yield return new WaitForSeconds(0.3f);
             PlayHat();
             yield return new WaitForSeconds(0.3f);
@@ -451,7 +466,10 @@ public class BombItScript : MonoBehaviour
             _actionExpected = true;
             yield return new WaitForSeconds(0.2f);
             PlayKick();
-            for (int i = 0; i < 10; i++)
+            int delay = 10;
+            if (TwitchPlaysActive && !Autosolved)
+                delay += 400;
+            for (int i = 0; i < delay; i++)
             {
                 if (_isTilted && _requiredActions[_currentAction] == "Tilt It!" && !_actionSatisfied)
                 {
@@ -487,6 +505,8 @@ public class BombItScript : MonoBehaviour
             str += " JA";
         Audio.PlaySoundAtTransform(str, transform);
         Debug.LogFormat("[Bomb It!{0} #{1}] {2}", _japanese ? " JA" : "", _moduleId, GetSolveAction());
+        if (tpAPI != null && !Autosolved)
+            tpAPI["ircConnectionSendMessage"] = "Module " + GetModuleCode() + " (Bomb It!" + (_japanese ? " JA" : "") + ") says: " + GetSolveAction();
         PlayKick();
         yield return new WaitForSeconds(0.3f);
         PlayHat();
@@ -497,7 +517,10 @@ public class BombItScript : MonoBehaviour
         PlayHat();
         yield return new WaitForSeconds(0.3f);
         PlayKick();
-        yield return new WaitForSeconds(0.2f);
+        if (TwitchPlaysActive && !Autosolved)
+            yield return new WaitForSeconds(8.2f);
+        else
+            yield return new WaitForSeconds(0.2f);
         _actionExpected = false;
         if (!_actionSatisfied)
         {
@@ -549,5 +572,168 @@ public class BombItScript : MonoBehaviour
         yield return new WaitForSeconds(0.5f);
         _wireCanStrike = true;
         yield break;
+    }
+
+    //twitch plays
+    private IDictionary<string, object> tpAPI;
+    private bool TwitchPlaysActive;
+    private bool Autosolved;
+    #pragma warning disable 414
+    private readonly string TwitchHelpMessage = @"!{0} play [Presses the play button] | !{0} flip/slide/press/snip/tilt [Performs the specified action] | !{0} sl [Presses the status light] | On Twitch Plays there is an extra 8 seconds of leniency for performing actions and all actions are outputted to chat";
+    #pragma warning restore 414
+
+    private IEnumerator ProcessTwitchCommand(string command)
+    {
+        command = command.ToLowerInvariant();
+        switch (command)
+        {
+            case "play":
+            case "start":
+                if (_sequencePlaying)
+                {
+                    yield return "sendtochaterror The module has already been started!";
+                    yield break;
+                }
+                yield return null;
+                yield return "strike";
+                PlaySel.OnInteract();
+                break;
+            case "flip":
+                if (!_sequencePlaying)
+                {
+                    yield return "sendtochaterror The module must be started first!";
+                    yield break;
+                }
+                yield return null;
+                SwitchSel.OnInteract();
+                break;
+            case "slide":
+                if (!_sequencePlaying)
+                {
+                    yield return "sendtochaterror The module must be started first!";
+                    yield break;
+                }
+                yield return null;
+                SliderSel.OnInteract();
+                if (_currentSliderPos == 0)
+                    SliderRegionSels[1].OnHighlight();
+                else
+                    SliderRegionSels[0].OnHighlight();
+                SliderSel.OnInteractEnded();
+                break;
+            case "snip":
+                if (!_sequencePlaying)
+                {
+                    yield return "sendtochaterror The module must be started first!";
+                    yield break;
+                }
+                if (_isSnipped)
+                {
+                    yield return "sendtochaterror The wire has already been snipped!";
+                    yield break;
+                }
+                yield return null;
+                WireSel.OnInteract();
+                break;
+            case "press":
+                if (!_sequencePlaying)
+                {
+                    yield return "sendtochaterror The module must be started first!";
+                    yield break;
+                }
+                yield return null;
+                ButtonSel.OnInteract();
+                ButtonSel.OnInteractEnded();
+                break;
+            case "sl":
+            case "status light":
+                if (!_sequencePlaying)
+                {
+                    yield return "sendtochaterror The module must be started first!";
+                    yield break;
+                }
+                yield return null;
+                StatusLightSel.OnInteract();
+                break;
+        }
+    }
+
+    private IEnumerator TwitchHandleForcedSolve()
+    {
+        Autosolved = true;
+        if (!_sequencePlaying)
+            PlaySel.OnInteract();
+        while (!_moduleSolved)
+        {
+            while (!_actionExpected || _actionSatisfied) yield return null;
+            if (_solveItExpected)
+                StatusLightSel.OnInteract();
+            else
+            {
+                switch (_requiredActions[_currentAction])
+                {
+                    case "Press It!":
+                        ButtonSel.OnInteract();
+                        ButtonSel.OnInteractEnded();
+                        break;
+                    case "Flip It!":
+                        SwitchSel.OnInteract();
+                        break;
+                    case "Snip It!":
+                        WireSel.OnInteract();
+                        break;
+                    case "Slide It!":
+                        SliderSel.OnInteract();
+                        if (_currentSliderPos == 0)
+                            SliderRegionSels[1].OnHighlight();
+                        else
+                            SliderRegionSels[0].OnHighlight();
+                        SliderSel.OnInteractEnded();
+                        break;
+                    default:
+                        Transform mod = Module.transform;
+                        Vector3 origAngles = mod.localEulerAngles;
+                        float t = 0;
+                        while (!_isTilted)
+                        {
+                            yield return null;
+                            t += Time.deltaTime;
+                            Vector3 angle = mod.localEulerAngles;
+                            angle.x += 2f;
+                            mod.localEulerAngles = angle;
+                        }
+                        while (!_actionSatisfied) yield return null;
+                        float t2 = 0f;
+                        while (t2 < t)
+                        {
+                            yield return null;
+                            t2 += Time.deltaTime;
+                            Vector3 angle = mod.localEulerAngles;
+                            angle.x -= 2f;
+                            mod.localEulerAngles = angle;
+                        }
+                        mod.localEulerAngles = origAngles;
+                        break;
+                }
+            }
+        }
+    }
+
+    // Gets the Twitch Plays ID for the module
+    private string GetModuleCode()
+    {
+        Transform closest = null;
+        float closestDistance = float.MaxValue;
+        foreach (Transform children in transform.parent)
+        {
+            var distance = (transform.position - children.position).magnitude;
+            if (children.gameObject.name == "TwitchModule(Clone)" && (closest == null || distance < closestDistance))
+            {
+                closest = children;
+                closestDistance = distance;
+            }
+        }
+
+        return closest != null ? closest.Find("MultiDeckerUI").Find("IDText").GetComponent<UnityEngine.UI.Text>().text : null;
     }
 }

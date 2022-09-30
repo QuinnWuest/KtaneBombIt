@@ -13,6 +13,7 @@ public class BombItScript : MonoBehaviour
 
     private int _moduleId;
     private static int _moduleIdCounter = 1;
+    private static int _moduleJPIdCounter = 1;
     private bool _moduleSolved;
 
     public string Language;
@@ -69,7 +70,6 @@ public class BombItScript : MonoBehaviour
 
     private void Start()
     {
-        _moduleId = _moduleIdCounter++;
         PlaySel.OnInteract += PlayPress;
         StatusLightSel.OnInteract += StatusLightPress;
         ButtonSel.OnInteract += ButtonPress;
@@ -79,14 +79,27 @@ public class BombItScript : MonoBehaviour
         SliderSel.OnInteract += SliderPress;
         SliderSel.OnInteractEnded += SliderRelease;
 
-        if (Language != null)
+        if (Language == "Japanese")
         {
-            if (Language == "Japanese")
-                _japanese = true;
+            _japanese = true;
+            _moduleId = _moduleJPIdCounter++;
         }
+        else
+            _moduleId = _moduleIdCounter++;
         InitialLog();
         for (int i = 0; i < SliderRegionSels.Length; i++)
             SliderRegionSels[i].OnHighlight += SliderHighlight(i);
+
+        Module.OnActivate += Activate;
+    }
+
+    private void Activate()
+    {
+        if (TwitchPlaysActive && !Application.isEditor)
+        {
+            GameObject tpAPIGameObject = GameObject.Find("TwitchPlays_Info");
+            tpAPI = tpAPIGameObject.GetComponent<IDictionary<string, object>>();
+        }
     }
 
     private void InitialLog()
@@ -94,7 +107,7 @@ public class BombItScript : MonoBehaviour
         if (_japanese)
             Debug.LogFormat("[Bomb It!{0} #{1}] 爆弾へようこそ！", _japanese ? " JA" : "", _moduleId);
         else
-            Debug.LogFormat("[Bomb It!{0} #{0}] Welcome to Bomb It!", _japanese ? " JA" : "", _moduleId);
+            Debug.LogFormat("[Bomb It!{0} #{1}] Welcome to Bomb It!", _japanese ? " JA" : "", _moduleId);
     }
 
     private void Update()
@@ -439,6 +452,8 @@ public class BombItScript : MonoBehaviour
             PlayKick();
             PlayActionVoiceLine(_requiredActions[_currentAction]);
             Debug.LogFormat("[Bomb It!{0} #{1}] {2}", _japanese ? " JA" : "", _moduleId, GetAction(_requiredActions[_currentAction]));
+            if (tpAPI != null)
+                tpAPI["ircConnectionSendMessage"] = "Module " + GetModuleCode() + " (Bomb It!" + (_japanese ? " JA" : "") + ") says: " + GetAction(_requiredActions[_currentAction]);
             yield return new WaitForSeconds(0.3f);
             PlayHat();
             yield return new WaitForSeconds(0.3f);
@@ -450,8 +465,8 @@ public class BombItScript : MonoBehaviour
             yield return new WaitForSeconds(0.2f);
             PlayKick();
             int delay = 10;
-            if (TwitchPlaysActive)
-                delay += 600;
+            if (TwitchPlaysActive && !Autosolved)
+                delay += 400;
             for (int i = 0; i < delay; i++)
             {
                 if (_isTilted && _requiredActions[_currentAction] == "Tilt It!" && !_actionSatisfied)
@@ -488,6 +503,8 @@ public class BombItScript : MonoBehaviour
             str += " JA";
         Audio.PlaySoundAtTransform(str, transform);
         Debug.LogFormat("[Bomb It!{0} #{1}] {2}", _japanese ? " JA" : "", _moduleId, GetSolveAction());
+        if (tpAPI != null)
+            tpAPI["ircConnectionSendMessage"] = "Module " + GetModuleCode() + " (Bomb It!" + (_japanese ? " JA" : "") + ") says: " + GetSolveAction();
         PlayKick();
         yield return new WaitForSeconds(0.3f);
         PlayHat();
@@ -498,7 +515,10 @@ public class BombItScript : MonoBehaviour
         PlayHat();
         yield return new WaitForSeconds(0.3f);
         PlayKick();
-        yield return new WaitForSeconds(0.2f);
+        if (TwitchPlaysActive && !Autosolved)
+            yield return new WaitForSeconds(8.2f);
+        else
+            yield return new WaitForSeconds(0.2f);
         _actionExpected = false;
         if (!_actionSatisfied)
         {
@@ -553,9 +573,11 @@ public class BombItScript : MonoBehaviour
     }
 
     //twitch plays
+    private IDictionary<string, object> tpAPI;
     private bool TwitchPlaysActive;
+    private bool Autosolved;
     #pragma warning disable 414
-    private readonly string TwitchHelpMessage = @"!{0} play [Presses the play button] | !{0} flip/slide/press/snip/tilt [Performs the specified action] | !{0} sl [Presses the status light] | On Twitch Plays there is an extra 12 seconds of leniency for performing actions";
+    private readonly string TwitchHelpMessage = @"!{0} play [Presses the play button] | !{0} flip/slide/press/snip/tilt [Performs the specified action] | !{0} sl [Presses the status light] | On Twitch Plays there is an extra 8 seconds of leniency for performing actions and all actions are outputted to chat";
     #pragma warning restore 414
 
     private IEnumerator ProcessTwitchCommand(string command)
@@ -636,6 +658,7 @@ public class BombItScript : MonoBehaviour
 
     private IEnumerator TwitchHandleForcedSolve()
     {
+        Autosolved = true;
         if (!_sequencePlaying)
             PlaySel.OnInteract();
         while (!_moduleSolved)
@@ -666,33 +689,47 @@ public class BombItScript : MonoBehaviour
                         SliderSel.OnInteractEnded();
                         break;
                     default:
-                        Transform bomb;
-                        if (Application.isEditor)
-                            bomb = Module.transform.parent.parent;
-                        else
-                            bomb = Module.transform.parent;
+                        Transform mod = Module.transform;
                         float t = 0;
                         while (!_isTilted)
                         {
                             yield return null;
                             t += Time.deltaTime;
-                            Vector3 angle = bomb.localEulerAngles;
+                            Vector3 angle = mod.localEulerAngles;
                             angle.x += 2f;
-                            bomb.localEulerAngles = angle;
+                            mod.localEulerAngles = angle;
                         }
-                        while (_actionExpected) yield return null;
+                        while (!_actionSatisfied) yield return null;
                         float t2 = 0f;
                         while (t2 < t)
                         {
                             yield return null;
                             t2 += Time.deltaTime;
-                            Vector3 angle = bomb.localEulerAngles;
+                            Vector3 angle = mod.localEulerAngles;
                             angle.x -= 2f;
-                            bomb.localEulerAngles = angle;
+                            mod.localEulerAngles = angle;
                         }
                         break;
                 }
             }
         }
+    }
+
+    // Gets the Twitch Plays ID for the module
+    private string GetModuleCode()
+    {
+        Transform closest = null;
+        float closestDistance = float.MaxValue;
+        foreach (Transform children in transform.parent)
+        {
+            var distance = (transform.position - children.position).magnitude;
+            if (children.gameObject.name == "TwitchModule(Clone)" && (closest == null || distance < closestDistance))
+            {
+                closest = children;
+                closestDistance = distance;
+            }
+        }
+
+        return closest != null ? closest.Find("MultiDeckerUI").Find("IDText").GetComponent<UnityEngine.UI.Text>().text : null;
     }
 }

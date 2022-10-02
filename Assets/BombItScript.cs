@@ -29,7 +29,7 @@ public class BombItScript : MonoBehaviour
     private static readonly string[] _strikeLines = new string[] { "YOWWWWW!", "Bummer.", "You blew it, dude.", "Do it the same, but, uh, better.", "Strikerooni, frienderini!" };
 
     private static readonly string[] _japaneseActionNames = new string[] { "押して！", "傾けて！", "切り替えて！", "切って！", "スライドして！" };
-    
+
     // Solve It!
     public KMSelectable StatusLightSel;
     // Tilt It!
@@ -59,6 +59,7 @@ public class BombItScript : MonoBehaviour
     private bool _actionSatisfied;
     private bool _actionExpectedAutosolve;
     private bool _solveItExpected;
+    private bool _voicelinePlayed;
     private bool _wireCanStrike = true;
     private Coroutine _wireStrikeDelay;
 
@@ -137,9 +138,6 @@ public class BombItScript : MonoBehaviour
         _inputActions = new List<string>();
         _actionLength = Rnd.Range(6, 10);
         _currentAction = 0;
-        _actionSatisfied = false;
-        _actionExpected = false;
-        _actionExpectedAutosolve = false;
         for (int i = 0; i < _actionLength; i++)
         {
             var action = _actionNames[Rnd.Range(0, _actionNames.Length)];
@@ -171,7 +169,14 @@ public class BombItScript : MonoBehaviour
             _sequencePlaying = false;
             if (_bombItSequence != null)
                 StopCoroutine(_bombItSequence);
-            Debug.LogFormat("<Bomb It!{0} #{1}> Attempted to Solve It! When action wasn't expected. Strike.", _japanese ? " JA" : "", _moduleId);
+            if (_voicelinePlayed)
+                Debug.LogFormat("<Bomb It!{0} #{1}> Attempted to Solve It! too early. Strike.", _japanese ? " JA" : "", _moduleId);
+            else
+                Debug.LogFormat("<Bomb It!{0} #{1}> Attempted to Solve It! When action wasn't expected. Strike.", _japanese ? " JA" : "", _moduleId);
+            _actionSatisfied = false;
+            _actionExpected = false;
+            _actionExpectedAutosolve = false;
+            _voicelinePlayed = false;
             return false;
         }
         _inputActions.Add("Solve It!");
@@ -183,6 +188,10 @@ public class BombItScript : MonoBehaviour
             if (_bombItSequence != null)
                 StopCoroutine(_bombItSequence);
             Debug.LogFormat("<Bomb It!{0} #{1}> Attempted to Solve It! When {2} was expected. Strike.", _japanese ? " JA" : "", _moduleId, _requiredActions[_currentAction]);
+            _actionSatisfied = false;
+            _actionExpected = false;
+            _actionExpectedAutosolve = false;
+            _voicelinePlayed = false;
             return false;
         }
         _actionSatisfied = true;
@@ -208,7 +217,14 @@ public class BombItScript : MonoBehaviour
             _sequencePlaying = false;
             if (_bombItSequence != null)
                 StopCoroutine(_bombItSequence);
-            Debug.LogFormat("<Bomb It!{0} #{1}> Attempted to Press It! When action wasn't expected. Strike.", _japanese ? " JA" : "", _moduleId);
+            if (_voicelinePlayed)
+                Debug.LogFormat("<Bomb It!{0} #{1}> Attempted to Press It! too early. Strike.", _japanese ? " JA" : "", _moduleId);
+            else
+                Debug.LogFormat("<Bomb It!{0} #{1}> Attempted to Press It! When action wasn't expected. Strike.", _japanese ? " JA" : "", _moduleId);
+            _actionSatisfied = false;
+            _actionExpected = false;
+            _actionExpectedAutosolve = false;
+            _voicelinePlayed = false;
             return false;
         }
         _inputActions.Add("Press It!");
@@ -219,10 +235,11 @@ public class BombItScript : MonoBehaviour
             _sequencePlaying = false;
             if (_bombItSequence != null)
                 StopCoroutine(_bombItSequence);
-            if (_solveItExpected)
-                Debug.LogFormat("<Bomb It!{0} #{1}> Attempted to Press It! When Solve It! was expected. Strike.", _japanese ? " JA" : "", _moduleId);
-            else
-                Debug.LogFormat("<Bomb It!{0} #{1}> Attempted to Press It! When {2} was expected. Strike.", _japanese ? " JA" : "", _moduleId, _requiredActions[_currentAction]);
+            Debug.LogFormat("<Bomb It!{0} #{1}> Attempted to Press It! When {2} was expected. Strike.", _japanese ? " JA" : "", _moduleId, _requiredActions[_currentAction]);
+            _actionSatisfied = false;
+            _actionExpected = false;
+            _actionExpectedAutosolve = false;
+            _voicelinePlayed = false;
             return false;
         }
         _actionSatisfied = true;
@@ -268,7 +285,14 @@ public class BombItScript : MonoBehaviour
             _sequencePlaying = false;
             if (_bombItSequence != null)
                 StopCoroutine(_bombItSequence);
-            Debug.LogFormat("<Bomb It!{0} #{1}> Attempted to Flip It! When action wasn't expected. Strike.", _japanese ? " JA" : "", _moduleId);
+            if (_voicelinePlayed)
+                Debug.LogFormat("<Bomb It!{0} #{1}> Attempted to Flip It! too early. Strike.", _japanese ? " JA" : "", _moduleId);
+            else
+                Debug.LogFormat("<Bomb It!{0} #{1}> Attempted to Flip It! When action wasn't expected. Strike.", _japanese ? " JA" : "", _moduleId);
+            _actionSatisfied = false;
+            _actionExpected = false;
+            _actionExpectedAutosolve = false;
+            _voicelinePlayed = false;
             return false;
         }
         _inputActions.Add("Flip It!");
@@ -283,6 +307,10 @@ public class BombItScript : MonoBehaviour
                 Debug.LogFormat("<Bomb It!{0} #{1}> Attempted to Flip It! When Solve It! was expected. Strike.", _japanese ? " JA" : "", _moduleId);
             else
                 Debug.LogFormat("<Bomb It!{0} #{1}> Attempted to Flip It! When {2} was expected. Strike.", _japanese ? " JA" : "", _moduleId, _requiredActions[_currentAction]);
+            _actionSatisfied = false;
+            _actionExpected = false;
+            _actionExpectedAutosolve = false;
+            _voicelinePlayed = false;
             return false;
         }
         _actionSatisfied = true;
@@ -327,7 +355,14 @@ public class BombItScript : MonoBehaviour
             _sequencePlaying = false;
             if (_bombItSequence != null)
                 StopCoroutine(_bombItSequence);
-            Debug.LogFormat("<Bomb It!{0} #{1}> Attempted to Snip It! When action wasn't expected. Strike.", _japanese ? " JA" : "", _moduleId);
+            if (_voicelinePlayed)
+                Debug.LogFormat("<Bomb It!{0} #{1}> Attempted to Snip It! too early. Strike.", _japanese ? " JA" : "", _moduleId);
+            else
+                Debug.LogFormat("<Bomb It!{0} #{1}> Attempted to Snip It! When action wasn't expected. Strike.", _japanese ? " JA" : "", _moduleId);
+            _actionSatisfied = false;
+            _actionExpected = false;
+            _actionExpectedAutosolve = false;
+            _voicelinePlayed = false;
             return false;
         }
         _inputActions.Add("Snip It!");
@@ -342,6 +377,10 @@ public class BombItScript : MonoBehaviour
                 Debug.LogFormat("<Bomb It!{0} #{1}> Attempted to Snip It! When Solve It! was expected. Strike.", _japanese ? " JA" : "", _moduleId);
             else
                 Debug.LogFormat("<Bomb It!{0} #{1}> Attempted to Snip It! When {2} was expected. Strike.", _japanese ? " JA" : "", _moduleId, _requiredActions[_currentAction]);
+            _actionSatisfied = false;
+            _actionExpected = false;
+            _actionExpectedAutosolve = false;
+            _voicelinePlayed = false;
             return false;
         }
         Audio.PlaySoundAtTransform("Snip", transform);
@@ -351,7 +390,7 @@ public class BombItScript : MonoBehaviour
         return false;
     }
 
-    
+
 
     private bool SliderPress()
     {
@@ -383,7 +422,14 @@ public class BombItScript : MonoBehaviour
                     _sequencePlaying = false;
                     if (_bombItSequence != null)
                         StopCoroutine(_bombItSequence);
-                    Debug.LogFormat("<Bomb It!{0} #{1}> Attempted to Slide It! When action wasn't expected. Strike.", _japanese ? " JA" : "", _moduleId);
+                    if (_voicelinePlayed)
+                        Debug.LogFormat("<Bomb It!{0} #{1}> Attempted to Slide It! too early. Strike.", _japanese ? " JA" : "", _moduleId);
+                    else
+                        Debug.LogFormat("<Bomb It!{0} #{1}> Attempted to Slide It! When action wasn't expected. Strike.", _japanese ? " JA" : "", _moduleId);
+                    _actionSatisfied = false;
+                    _actionExpected = false;
+                    _actionExpectedAutosolve = false;
+                    _voicelinePlayed = false;
                     return;
                 }
                 _inputActions.Add("Slide It!");
@@ -398,6 +444,10 @@ public class BombItScript : MonoBehaviour
                         Debug.LogFormat("<Bomb It!{0} #{1}> Attempted to Slide It! When Solve It! was expected. Strike.", _japanese ? " JA" : "", _moduleId);
                     else
                         Debug.LogFormat("<Bomb It!{0} #{1}> Attempted to Slide It! When {2} was expected. Strike.", _japanese ? " JA" : "", _moduleId, _requiredActions[_currentAction]);
+                    _actionSatisfied = false;
+                    _actionExpected = false;
+                    _actionExpectedAutosolve = false;
+                    _voicelinePlayed = false;
                     return;
                 }
                 Audio.PlaySoundAtTransform("Slide", transform);
@@ -459,6 +509,7 @@ public class BombItScript : MonoBehaviour
         while (_currentAction != _actionLength)
         {
             PlayKick();
+            _voicelinePlayed = true;
             PlayActionVoiceLine(_requiredActions[_currentAction]);
             Debug.LogFormat("[Bomb It!{0} #{1}] {2}", _japanese ? " JA" : "", _moduleId, GetAction(_requiredActions[_currentAction]));
             if (tpAPI != null && !Autosolved)
@@ -470,6 +521,7 @@ public class BombItScript : MonoBehaviour
             yield return new WaitForSeconds(0.3f);
             PlayHat();
             yield return new WaitForSeconds(0.1f);
+            _voicelinePlayed = false;
             _actionExpected = true;
             yield return new WaitForSeconds(0.2f);
             _actionExpectedAutosolve = true;
@@ -497,6 +549,10 @@ public class BombItScript : MonoBehaviour
                 Module.HandleStrike();
                 PlayEndingVoiceLine(false);
                 _sequencePlaying = false;
+                _actionSatisfied = false;
+                _actionExpected = false;
+                _actionExpectedAutosolve = false;
+                _voicelinePlayed = false;
                 yield break;
             }
             _actionSatisfied = false;
@@ -539,6 +595,10 @@ public class BombItScript : MonoBehaviour
             Module.HandleStrike();
             PlayEndingVoiceLine(false);
             _sequencePlaying = false;
+            _actionSatisfied = false;
+            _actionExpected = false;
+            _actionExpectedAutosolve = false;
+            _voicelinePlayed = false;
             yield break;
         }
         yield break;
@@ -589,9 +649,9 @@ public class BombItScript : MonoBehaviour
     private IDictionary<string, object> tpAPI;
     private bool TwitchPlaysActive;
     private bool Autosolved;
-    #pragma warning disable 414
+#pragma warning disable 414
     private readonly string TwitchHelpMessage = @"!{0} play [Presses the play button] | !{0} flip/slide/press/snip/tilt [Performs the specified action] | !{0} sl [Presses the status light] | On Twitch Plays there is an extra 8 seconds of leniency for performing actions and all actions are outputted to chat";
-    #pragma warning restore 414
+#pragma warning restore 414
 
     private IEnumerator ProcessTwitchCommand(string command)
     {
@@ -678,6 +738,7 @@ public class BombItScript : MonoBehaviour
         {
             while (!_actionExpected || _actionSatisfied) yield return null;
             while (!_actionExpectedAutosolve && !_solveItExpected && _requiredActions[_currentAction] != "Tilt It!") yield return null;
+            while (_solveItExpected && !_actionExpectedAutosolve) yield return null;
             if (_solveItExpected)
                 StatusLightSel.OnInteract();
             else

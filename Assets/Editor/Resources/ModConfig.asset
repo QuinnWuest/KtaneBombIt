@@ -16,8 +16,9 @@ MonoBehaviour:
   author: Quinn Wuest
   description: "Press It! Flip It! Snip It! Slide It! Tilt It! Boom It... no, don't
     do that last one please...\n\nDeveloped by Quinn Wuest\nEnglish voiceover by yabbaguy\nJapanese
-    voiceover by LR\n\n[url=https://ktane.timwi.de/HTML/Bomb%20It!.html]Manual HTML[/url].\r\n[url=https://ktane.timwi.de/HTML/Bomb%20It!.pdf]Manual
-    PDF[/url]."
+    voiceover by LR\n\nIf you want to record voice lines for Bomb It! in your own
+    language, DM me on Discord @quinnwuest\n\n[url=https://ktane.timwi.de/HTML/Bomb%20It!.html]Manual
+    HTML[/url].\r\n[url=https://ktane.timwi.de/HTML/Bomb%20It!.pdf]Manual PDF[/url]."
   version: 1.0
   outputFolder: build
   previewImage: {fileID: 2800000, guid: a2419154b73c8c144963d11191382ffc, type: 3}

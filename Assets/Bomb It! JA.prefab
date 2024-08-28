@@ -2383,7 +2383,7 @@ TextMesh:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1823560734734442}
-  m_Text: "\u7206\u5F3E\uFF01"
+  m_Text: 
   m_OffsetZ: 0
   m_CharacterSize: 1
   m_LineSpacing: 1
@@ -2826,8 +2826,9 @@ MonoBehaviour:
   Module: {fileID: 114073075409771458}
   BombInfo: {fileID: 114033584966272602}
   Audio: {fileID: 114898504326017304}
-  Language: Japanese
+  PublicVarLanguage: Japanese
   PlaySel: {fileID: 114823135045372514}
+  BombItLabel: {fileID: 102458076650619262}
   StatusLightSel: {fileID: 114347015567058468}
   Background: {fileID: 1444599667169586}
   ButtonSel: {fileID: 114677100347425374}

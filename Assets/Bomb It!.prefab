@@ -2404,7 +2404,7 @@ TextMesh:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1736639222090388}
-  m_Text: Bomb It!
+  m_Text: 
   m_OffsetZ: 0
   m_CharacterSize: 1
   m_LineSpacing: 1
@@ -2923,8 +2923,9 @@ MonoBehaviour:
   Module: {fileID: 114683801835270722}
   BombInfo: {fileID: 114519079388989284}
   Audio: {fileID: 114521459962637846}
-  Language: English
+  PublicVarLanguage: English
   PlaySel: {fileID: 114214644279710794}
+  BombItLabel: {fileID: 102836623120642992}
   StatusLightSel: {fileID: 114970806334219962}
   Background: {fileID: 1001772690143752}
   ButtonSel: {fileID: 114355013558949316}

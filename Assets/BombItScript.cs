@@ -63,28 +63,32 @@ public class BombItScript : MonoBehaviour
     public enum BombItAction
     {
         PressIt,
-        TiltIt,
         FlipIt,
         SnipIt,
         SlideIt,
+        TiltIt,
         SolveIt
     }
 
     public class BombItLangSetup
     {
+        public string Language;
         public string Label;
         public string LetterCode;
         public string[] ActionNamesInLanguage;
         public string SolveItInLanguage;
         public string WelcomeMessage;
+        public int FontSize;
 
-        public BombItLangSetup(string label, string letterCode, string[] anil, string solveIt, string welcome)
+        public BombItLangSetup(string lang, string label, string letterCode, string[] anil, string solveIt, string welcome, int fontSize)
         {
+            Language = lang;
             Label = label;
             ActionNamesInLanguage = anil;
             SolveItInLanguage = solveIt;
             WelcomeMessage = welcome;
             LetterCode = letterCode;
+            FontSize = fontSize;
         }
     }
 
@@ -94,33 +98,52 @@ public class BombItScript : MonoBehaviour
     private string ModuleName;
     private string[] EndingNames = new string[10] { "Solve1", "Solve2", "Solve3", "Solve4", "Solve5", "Strike1", "Strike2", "Strike3", "Strike4", "Strike5" };
 
-    private readonly BombItLangSetup[] AllSetups = new BombItLangSetup[]
+    private readonly BombItLangSetup[] LangSetups = new BombItLangSetup[]
     {
         new BombItLangSetup(
+            "English",
             "Bomb It!",
             "",
             new string[] {
                 "Press It!",
-                "Tilt It!",
                 "Flip It!",
                 "Snip It!",
-                "Slide It!"
+                "Slide It!",
+                "Tilt It!"
             },
             "Solve It!",
-            "Welcome to Bomb It!"
-            ),
+            "Welcome to Bomb It!",
+            256
+        ),
         new BombItLangSetup(
+            "Japanese",
             "爆弾！",
             "JA",
             new string[] {
                 "押して！",
-                "傾けて！",
                 "切り替えて！",
                 "切って！",
-                "スライドして！"
+                "スライドして！",
+                "傾けて！",
             },
             "解除！",
-            "爆弾へようこそ！"
+            "爆弾へようこそ！",
+            256
+        ),
+        new BombItLangSetup(
+            "Polish",
+            "Zbombarduj to!",
+            "PL",
+            new string[] {
+                "Wciśnij to!",
+                "Przełącz to!",
+                "Utnij to!",
+                "Przesuń to!",
+                "Przechyl to!",
+            },
+            "Rozbrój to!",
+            "Witamy w Zbombarduj to!",
+            180
         )
     };
 
@@ -130,29 +153,28 @@ public class BombItScript : MonoBehaviour
 
     private void Start()
     {
-        if (PublicVarLanguage == "English")
-            CurrentSetup = AllSetups[0];
-        else if (PublicVarLanguage == "Japanese")
-            CurrentSetup = AllSetups[1];
-        else
+        var langs = LangSetups.Select(i => i.Language).ToArray();
+        int langIx = Array.IndexOf(langs, PublicVarLanguage);
+        if (langIx == -1)
             throw new InvalidOperationException("Invalid language");
+        CurrentSetup = LangSetups[langIx];
 
         if (_moduleIdCounters == null)
         {
-            _moduleIdCounters = new int[AllSetups.Length];
+            _moduleIdCounters = new int[LangSetups.Length];
             for (int i = 0; i < _moduleIdCounters.Length; i++)
                 _moduleIdCounters[i] = 1;
         }
+        _moduleId = _moduleIdCounters[langIx]++;
 
         BombItLabel.text = CurrentSetup.Label;
+        BombItLabel.fontSize = CurrentSetup.FontSize;
         ModuleName = "Bomb It!" + (CurrentSetup.LetterCode.Length == 0 ? "" : " " + CurrentSetup.LetterCode);
         ActionNames = CurrentSetup.ActionNamesInLanguage.ToArray();
         SolveItName = CurrentSetup.SolveItInLanguage;
         WelcomeMessage = CurrentSetup.WelcomeMessage;
         EndingNames = EndingNames.Select(i => i.ToString() + CurrentSetup.LetterCode).ToArray();
 
-        int ix = Array.IndexOf(AllSetups, CurrentSetup);
-        _moduleId = _moduleIdCounters[ix]++;
 
         PlaySel.OnInteract += PlayPress;
         StatusLightSel.OnInteract += StatusLightPress;
@@ -205,7 +227,7 @@ public class BombItScript : MonoBehaviour
             canSnip = true;
         _requiredActions = new List<BombItAction>();
         _inputActions = new List<BombItAction>();
-        var randActCount = Rnd.Range(6, 10);
+        var randActCount = Rnd.Range(6, 11);
         _currentAction = 0;
         for (int i = 0; i < randActCount; i++)
         {
@@ -795,6 +817,7 @@ public class BombItScript : MonoBehaviour
                 {
                     case BombItAction.PressIt:
                         ButtonSel.OnInteract();
+                        yield return new WaitForSeconds(0.1f);
                         ButtonSel.OnInteractEnded();
                         break;
                     case BombItAction.FlipIt:

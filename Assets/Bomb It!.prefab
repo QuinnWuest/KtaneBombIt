@@ -2923,7 +2923,8 @@ MonoBehaviour:
   Module: {fileID: 114683801835270722}
   BombInfo: {fileID: 114519079388989284}
   Audio: {fileID: 114521459962637846}
-  PublicVarLanguage: English
+  ModSettings: {fileID: 0}
+  IsTranslatedModule: 0
   PlaySel: {fileID: 114214644279710794}
   BombItLabel: {fileID: 102836623120642992}
   StatusLightSel: {fileID: 114970806334219962}

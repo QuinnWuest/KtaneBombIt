@@ -4,6 +4,10 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using Rnd = UnityEngine.Random;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using System.Reflection;
+using System.Text.RegularExpressions;
 
 public class BombItScript : MonoBehaviour
 {
@@ -11,14 +15,14 @@ public class BombItScript : MonoBehaviour
     public KMBombModule Module;
     public KMBombInfo BombInfo;
     public KMAudio Audio;
+    public KMModSettings ModSettings;
+    public bool IsTranslatedModule;
 
-    public string PublicVarLanguage;
     public KMSelectable PlaySel;
     public TextMesh BombItLabel;
 
     private int _moduleId;
     private bool _moduleSolved;
-
 
     private Coroutine _bombItSequence;
     private int _currentAction;
@@ -70,112 +74,144 @@ public class BombItScript : MonoBehaviour
         SolveIt
     }
 
+    public class ModSettingsJSON
+    {
+        [JsonProperty("language")]
+        public string LanguageCode;
+        [JsonProperty("note")]
+        public string Note;
+    }
+
     public class BombItLangSetup
     {
-        public string Language;
+        public string LanguageName;
         public string Label;
-        public string LetterCode;
+        public string LanguageCode;
         public string[] ActionNamesInLanguage;
         public string SolveItInLanguage;
         public string WelcomeMessage;
         public int FontSize;
+        public string[] VoiceOverNames;
+        public bool Supported;
 
-        public BombItLangSetup(string lang, string label, string letterCode, string[] anil, string solveIt, string welcome, int fontSize)
+        public BombItLangSetup(string lang, string label, string code, string[] actionMsgs, string solveMsg, string welcome, int fontSize, string[] von = null, bool supported = true)
         {
-            Language = lang;
+            LanguageName = lang;
             Label = label;
-            ActionNamesInLanguage = anil;
-            SolveItInLanguage = solveIt;
+            ActionNamesInLanguage = actionMsgs;
+            SolveItInLanguage = solveMsg;
             WelcomeMessage = welcome;
-            LetterCode = letterCode;
+            LanguageCode = code;
             FontSize = fontSize;
+            VoiceOverNames = von;
+            Supported = supported;
         }
     }
 
-    private string[] ActionNames = new string[5];
-    private string SolveItName;
-    private string WelcomeMessage;
-    private string ModuleName;
-    private string[] EndingNames = new string[10] { "Solve1", "Solve2", "Solve3", "Solve4", "Solve5", "Strike1", "Strike2", "Strike3", "Strike4", "Strike5" };
+    private static readonly string[][] _presetMissionIds = new string[][]
+    {
+        new string[2]{ "mod_Communitworion_Communitworion", "ja" },
+        new string[2]{ "mod_awesome7285_missions_Definitely Soloable 1", "ja" },
+        new string[2]{ "mod_eXishMissions_drogryan", "ja" },
+        new string[2]{ "mod_witeksmissionpack_Modules Witek can solo", "ja" },
+        new string[2]{ "mod_arleenmission_Monsplode Red & Blue", "ja" },
+        new string[2]{ "mod_witeksmissionpack_Witek's 47", "ja" }
+    };
+
+    private bool _isActivated;
+    private string[] _actionNames = new string[5];
+    private string _moduleName;
+    private string _currentVoiceOver = "";
+    private string[] _endingNames = new string[10] { "Solve1", "Solve2", "Solve3", "Solve4", "Solve5", "Strike1", "Strike2", "Strike3", "Strike4", "Strike5" };
 
     private readonly BombItLangSetup[] LangSetups = new BombItLangSetup[]
     {
         new BombItLangSetup(
-            "English",
-            "Bomb It!",
-            "",
-            new string[] {
+            lang: "English",
+            label: "Bomb It!",
+            code: "en",
+            actionMsgs: new string[] {
                 "Press It!",
                 "Flip It!",
                 "Snip It!",
                 "Slide It!",
                 "Tilt It!"
             },
-            "Solve It!",
-            "Welcome to Bomb It!",
-            256
+            solveMsg: "Solve It!",
+            welcome: "Welcome to Bomb It!",
+            fontSize: 256
         ),
         new BombItLangSetup(
-            "Japanese",
-            "爆弾！",
-            "JA",
-            new string[] {
+            lang: "Japanese",
+            label: "爆弾！",
+            code: "ja",
+            actionMsgs: new string[] {
                 "押して！",
                 "切り替えて！",
                 "切って！",
                 "スライドして！",
                 "傾けて！",
             },
-            "解除！",
-            "爆弾へようこそ！",
-            256
+            solveMsg: "解除！",
+            welcome: "爆弾へようこそ！",
+            fontSize: 256
         ),
         new BombItLangSetup(
-            "Polish",
-            "Zbombarduj to!",
-            "PL",
-            new string[] {
+            lang: "Polish",
+            label: "Zbombarduj to!",
+            code: "pl",
+            actionMsgs: new string[] {
                 "Wciśnij to!",
                 "Przełącz to!",
                 "Utnij to!",
                 "Przesuń to!",
                 "Przechyl to!",
             },
-            "Rozbrój to!",
-            "Witamy w Zbombarduj to!",
-            180
+            solveMsg: "Rozbrój to!",
+            welcome: "Witamy w Zbombarduj to!",
+            fontSize: 180
+        ),
+        new BombItLangSetup(
+            lang: "Russian",
+            label: "Bomb it!",
+            code: "ru",
+            actionMsgs: new string[] {
+                "Press It!",
+                "Flip It!",
+                "Snip It!",
+                "Slide It!",
+                "Tilt It!"
+            },
+            solveMsg: "Solve It!",
+            welcome: "Welcome to Bomb It!",
+            fontSize: 256,
+            von: new string[] {"Rand", "Megum", "Termet"},
+            supported: false
+        ),
+        new BombItLangSetup(
+            lang: "Spanish",
+            label: "Bombealo!",
+            code: "es",
+            actionMsgs: new string[] {
+                "¡Púlsalo!",
+                "¡Vóltealo!",
+                "¡Córtalo!",
+                "¡Deslízalo!",
+                "¡Inclínalo!"
+            },
+            solveMsg: "¡Desarmalo!",
+            welcome: "¡Bienvenido a Bombealo!",
+            fontSize: 256,
+            supported: false
         )
     };
 
     private BombItLangSetup CurrentSetup;
 
-    private static int[] _moduleIdCounters;
+    private static readonly int[] _moduleIdCounters = new int[2] { 1, 1 };
 
     private void Start()
     {
-        var langs = LangSetups.Select(i => i.Language).ToArray();
-        int langIx = Array.IndexOf(langs, PublicVarLanguage);
-        if (langIx == -1)
-            throw new InvalidOperationException("Invalid language");
-        CurrentSetup = LangSetups[langIx];
-
-        if (_moduleIdCounters == null)
-        {
-            _moduleIdCounters = new int[LangSetups.Length];
-            for (int i = 0; i < _moduleIdCounters.Length; i++)
-                _moduleIdCounters[i] = 1;
-        }
-        _moduleId = _moduleIdCounters[langIx]++;
-
-        BombItLabel.text = CurrentSetup.Label;
-        BombItLabel.fontSize = CurrentSetup.FontSize;
-        ModuleName = "Bomb It!" + (CurrentSetup.LetterCode.Length == 0 ? "" : " " + CurrentSetup.LetterCode);
-        ActionNames = CurrentSetup.ActionNamesInLanguage.ToArray();
-        SolveItName = CurrentSetup.SolveItInLanguage;
-        WelcomeMessage = CurrentSetup.WelcomeMessage;
-        EndingNames = EndingNames.Select(i => i.ToString() + CurrentSetup.LetterCode).ToArray();
-
-
         PlaySel.OnInteract += PlayPress;
         StatusLightSel.OnInteract += StatusLightPress;
         ButtonSel.OnInteract += ButtonPress;
@@ -185,13 +221,82 @@ public class BombItScript : MonoBehaviour
         SliderSel.OnInteract += SliderPress;
         SliderSel.OnInteractEnded += SliderRelease;
 
-        Debug.LogFormat("<{0} #{1}> Loaded module in {2} language.", ModuleName, _moduleId, PublicVarLanguage);
-        Debug.LogFormat("[{0} #{1}] {2}", ModuleName, _moduleId, WelcomeMessage);
-
         for (int i = 0; i < SliderRegionSels.Length; i++)
             SliderRegionSels[i].OnHighlight += SliderHighlight(i);
 
         Module.OnActivate += Activate;
+    }
+
+    private string GetLanguageCode()
+    {
+        if (!IsTranslatedModule)
+            return "en";
+        var langcodes = LangSetups.Select(i => i.LanguageCode).ToArray();
+
+        // Force language if on preset mission.
+        var missionID = GetMissionID();
+
+        if (_presetMissionIds.Select(i => i[0]).Contains(missionID))
+        {
+            var lc = _presetMissionIds[Array.IndexOf(_presetMissionIds.Select(i => i[0]).ToArray(), missionID)][1];
+            var langName = LangSetups[Array.IndexOf(LangSetups.Select(i => i.LanguageCode).ToArray(), lc)].LanguageName;
+            Debug.LogFormat("[Bomb It! Translated #{0}] Preset mission detected. ({1}) Forcing {2} language.", _moduleId, missionID, langName);
+            return lc;
+        }
+
+        // Set language based on mission description.
+        var missionDesc = KTMissionGetter.Mission.Description;
+        var rgx = missionDesc == null ? null : Regex.Match(missionDesc, @"^\[BombItTranslated]\s+(.*)$", RegexOptions.Multiline);
+        if (rgx != null && rgx.Success)
+        {
+            var lc = rgx.Groups[1].Value;
+            if (langcodes.Contains(lc) && lc != "en")
+                return lc;
+            else
+                Debug.LogFormat("[Bomb It! Translated #{0}] Invalid language code “{1}” found in mission description. Referring to ModSettings.", _moduleId, lc);
+        }
+
+        // Set language based on Mod settings.
+        try
+        {
+            ModSettingsJSON settings = JsonConvert.DeserializeObject<ModSettingsJSON>(ModSettings.Settings);
+            if (settings != null)
+            {
+                var lc = settings.LanguageCode.ToLowerInvariant();
+                if (langcodes.Contains(lc) && lc != "en")
+                    return lc;
+                else
+                {
+                    Debug.LogFormat("[Bomb It! Translated #{0}] Invalid language code “{1}” found in ModSettings. Using default language, Japanese.", _moduleName, lc);
+                    return "ja";
+                }
+            }
+            else
+            {
+                Debug.LogFormat("[Bomb It! Translated #{0}] No ModSettings file found. Using default language, Japanese.", _moduleName);
+                return "ja";
+            }
+        }
+        catch (JsonReaderException e)
+        {
+            Debug.LogFormat("[Bomb It! Translated #{0}] JSON reading failed with error {1}, using default language, Japanese.", _moduleId, e.Message);
+            return "ja";
+        }
+    }
+
+    private string GetMissionID()
+    {
+        try
+        {
+            Component gameplayState = GameObject.Find("GameplayState(Clone)").GetComponent("GameplayState");
+            Type type = gameplayState.GetType();
+            FieldInfo fieldMission = type.GetField("MissionToLoad", BindingFlags.Public | BindingFlags.Static);
+            return fieldMission.GetValue(gameplayState).ToString();
+        }
+        catch (NullReferenceException)
+        {
+            return "undefined";
+        }
     }
 
     private void Activate()
@@ -201,6 +306,28 @@ public class BombItScript : MonoBehaviour
             GameObject tpAPIGameObject = GameObject.Find("TwitchPlays_Info");
             tpAPI = tpAPIGameObject.GetComponent<IDictionary<string, object>>();
         }
+        var langCodes = LangSetups.Select(i => i.LanguageCode).ToArray();
+        int langIx;
+        if (TwitchPlaysActive && IsTranslatedModule)
+            langIx = Rnd.Range(1, LangSetups.Length);
+        else if (IsTranslatedModule)
+            langIx = Array.IndexOf(langCodes, GetLanguageCode());
+        else
+            langIx = 0;
+        CurrentSetup = LangSetups[langIx];
+        _moduleId = _moduleIdCounters[IsTranslatedModule ? 1 : 0]++;
+
+        BombItLabel.text = CurrentSetup.Label;
+        BombItLabel.fontSize = CurrentSetup.FontSize;
+        _moduleName = IsTranslatedModule ? "Bomb It! Translated" : "Bomb It!";
+        _actionNames = CurrentSetup.ActionNamesInLanguage.ToArray();
+        _endingNames = _endingNames.Select(i => i.ToString() + CurrentSetup.LanguageCode.ToUpperInvariant()).ToArray();
+
+        if (TwitchPlaysActive && IsTranslatedModule)
+            Debug.LogFormat("[{0} #{1}] Twitch Plays activated. Choosing random language...", _moduleName, _moduleId);
+        Debug.LogFormat("[{0} #{1}] Loaded module in {2} language.", _moduleName, _moduleId, LangSetups[langIx].LanguageName);
+        Debug.LogFormat("[{0} #{1}] {2}", _moduleName, _moduleId, CurrentSetup.WelcomeMessage);
+        _isActivated = true;
     }
 
     private void Update()
@@ -210,6 +337,8 @@ public class BombItScript : MonoBehaviour
 
     private bool PlayPress()
     {
+        if (!_isActivated)
+            return false;
         if (_wireStrikeDelay != null)
             StopCoroutine(_wireStrikeDelay);
         PlaySel.AddInteractionPunch(0.4f);
@@ -222,6 +351,8 @@ public class BombItScript : MonoBehaviour
 
     private void GenerateSequence()
     {
+        if (CurrentSetup.VoiceOverNames != null)
+            _currentVoiceOver = CurrentSetup.VoiceOverNames.PickRandom();
         bool canSnip = false;
         if (!_isSnipped)
             canSnip = true;
@@ -251,7 +382,7 @@ public class BombItScript : MonoBehaviour
     private bool StatusLightPress()
     {
         StatusLightSel.AddInteractionPunch(0.4f);
-        if (_moduleSolved || !_sequencePlaying)
+        if (!_sequencePlaying)
             return false;
         if (!_actionExpected && _sequencePlaying)
         {
@@ -261,9 +392,9 @@ public class BombItScript : MonoBehaviour
             if (_bombItSequence != null)
                 StopCoroutine(_bombItSequence);
             if (_voicelinePlayed)
-                Debug.LogFormat("<{0} #{1}> Attempted to Solve It! too early. Strike.", ModuleName, _moduleId);
+                Debug.LogFormat("<{0} #{1}> Attempted to Solve It! too early. Strike.", _moduleName, _moduleId);
             else
-                Debug.LogFormat("<{0} #{1}> Attempted to Solve It! When action wasn't expected. Strike.", ModuleName, _moduleId);
+                Debug.LogFormat("<{0} #{1}> Attempted to Solve It! When action wasn't expected. Strike.", _moduleName, _moduleId);
             _actionSatisfied = false;
             _actionExpected = false;
             _actionExpectedAutosolve = false;
@@ -278,7 +409,7 @@ public class BombItScript : MonoBehaviour
             _sequencePlaying = false;
             if (_bombItSequence != null)
                 StopCoroutine(_bombItSequence);
-            Debug.LogFormat("<{0} #{1}> Attempted to Solve It! When {2} was expected. Strike.", ModuleName, _moduleId, _requiredActions[_currentAction]);
+            Debug.LogFormat("<{0} #{1}> Attempted to Solve It! When {2} was expected. Strike.", _moduleName, _moduleId, _requiredActions[_currentAction]);
             _actionSatisfied = false;
             _actionExpected = false;
             _actionExpectedAutosolve = false;
@@ -299,7 +430,7 @@ public class BombItScript : MonoBehaviour
         ButtonSel.AddInteractionPunch(0.5f);
         StartCoroutine(AnimateButton(0f, -0.05f));
         Audio.PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.BigButtonPress, transform);
-        if (_moduleSolved || !_sequencePlaying)
+        if (!_sequencePlaying)
             return false;
         if (!_actionExpected && _sequencePlaying)
         {
@@ -309,9 +440,9 @@ public class BombItScript : MonoBehaviour
             if (_bombItSequence != null)
                 StopCoroutine(_bombItSequence);
             if (_voicelinePlayed)
-                Debug.LogFormat("<{0} #{1}> Attempted to Press It! too early. Strike.", ModuleName, _moduleId);
+                Debug.LogFormat("<{0} #{1}> Attempted to Press It! too early. Strike.", _moduleName, _moduleId);
             else
-                Debug.LogFormat("<{0} #{1}> Attempted to Press It! When action wasn't expected. Strike.", ModuleName, _moduleId);
+                Debug.LogFormat("<{0} #{1}> Attempted to Press It! When action wasn't expected. Strike.", _moduleName, _moduleId);
             _actionSatisfied = false;
             _actionExpected = false;
             _actionExpectedAutosolve = false;
@@ -326,7 +457,7 @@ public class BombItScript : MonoBehaviour
             _sequencePlaying = false;
             if (_bombItSequence != null)
                 StopCoroutine(_bombItSequence);
-            Debug.LogFormat("<{0} #{1}> Attempted to Press It! When {2} was expected. Strike.", ModuleName, _moduleId, _requiredActions[_currentAction]);
+            Debug.LogFormat("<{0} #{1}> Attempted to Press It! When {2} was expected. Strike.", _moduleName, _moduleId, _requiredActions[_currentAction]);
             _actionSatisfied = false;
             _actionExpected = false;
             _actionExpectedAutosolve = false;
@@ -367,7 +498,7 @@ public class BombItScript : MonoBehaviour
         Audio.PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.ButtonPress, transform);
         _switchState = !_switchState;
         StartCoroutine(AnimateSwitch());
-        if (_moduleSolved || !_sequencePlaying)
+        if (_moduleSolved || !_isActivated || !_sequencePlaying)
             return false;
         if (!_actionExpected && _sequencePlaying)
         {
@@ -377,9 +508,9 @@ public class BombItScript : MonoBehaviour
             if (_bombItSequence != null)
                 StopCoroutine(_bombItSequence);
             if (_voicelinePlayed)
-                Debug.LogFormat("<{0} #{1}> Attempted to Flip It! too early. Strike.", ModuleName, _moduleId);
+                Debug.LogFormat("<{0} #{1}> Attempted to Flip It! too early. Strike.", _moduleName, _moduleId);
             else
-                Debug.LogFormat("<{0} #{1}> Attempted to Flip It! When action wasn't expected. Strike.", ModuleName, _moduleId);
+                Debug.LogFormat("<{0} #{1}> Attempted to Flip It! When action wasn't expected. Strike.", _moduleName, _moduleId);
             _actionSatisfied = false;
             _actionExpected = false;
             _actionExpectedAutosolve = false;
@@ -395,9 +526,9 @@ public class BombItScript : MonoBehaviour
             if (_bombItSequence != null)
                 StopCoroutine(_bombItSequence);
             if (_solveItExpected)
-                Debug.LogFormat("<{0} #{1}> Attempted to Flip It! When Solve It! was expected. Strike.", ModuleName, _moduleId);
+                Debug.LogFormat("<{0} #{1}> Attempted to Flip It! When Solve It! was expected. Strike.", _moduleName, _moduleId);
             else
-                Debug.LogFormat("<{0} #{1}> Attempted to Flip It! When {2} was expected. Strike.", ModuleName, _moduleId, _requiredActions[_currentAction]);
+                Debug.LogFormat("<{0} #{1}> Attempted to Flip It! When {2} was expected. Strike.", _moduleName, _moduleId, _requiredActions[_currentAction]);
             _actionSatisfied = false;
             _actionExpected = false;
             _actionExpectedAutosolve = false;
@@ -428,6 +559,8 @@ public class BombItScript : MonoBehaviour
 
     private bool WirePress()
     {
+        if (!_isActivated)
+            return false;
         WireSel.AddInteractionPunch(0.2f);
         if (_isSnipped)
             return false;
@@ -447,9 +580,9 @@ public class BombItScript : MonoBehaviour
             if (_bombItSequence != null)
                 StopCoroutine(_bombItSequence);
             if (_voicelinePlayed)
-                Debug.LogFormat("<{0} #{1}> Attempted to Snip It! too early. Strike.", ModuleName, _moduleId);
+                Debug.LogFormat("<{0} #{1}> Attempted to Snip It! too early. Strike.", _moduleName, _moduleId);
             else
-                Debug.LogFormat("<{0} #{1}> Attempted to Snip It! When action wasn't expected. Strike.", ModuleName, _moduleId);
+                Debug.LogFormat("<{0} #{1}> Attempted to Snip It! When action wasn't expected. Strike.", _moduleName, _moduleId);
             _actionSatisfied = false;
             _actionExpected = false;
             _actionExpectedAutosolve = false;
@@ -465,9 +598,9 @@ public class BombItScript : MonoBehaviour
             if (_bombItSequence != null)
                 StopCoroutine(_bombItSequence);
             if (_solveItExpected)
-                Debug.LogFormat("<{0} #{1}> Attempted to Snip It! When Solve It! was expected. Strike.", ModuleName, _moduleId);
+                Debug.LogFormat("<{0} #{1}> Attempted to Snip It! When Solve It! was expected. Strike.", _moduleName, _moduleId);
             else
-                Debug.LogFormat("<{0} #{1}> Attempted to Snip It! When {2} was expected. Strike.", ModuleName, _moduleId, _requiredActions[_currentAction]);
+                Debug.LogFormat("<{0} #{1}> Attempted to Snip It! When {2} was expected. Strike.", _moduleName, _moduleId, _requiredActions[_currentAction]);
             _actionSatisfied = false;
             _actionExpected = false;
             _actionExpectedAutosolve = false;
@@ -512,9 +645,9 @@ public class BombItScript : MonoBehaviour
                     if (_bombItSequence != null)
                         StopCoroutine(_bombItSequence);
                     if (_voicelinePlayed)
-                        Debug.LogFormat("<{0} #{1}> Attempted to Slide It! too early. Strike.", ModuleName, _moduleId);
+                        Debug.LogFormat("<{0} #{1}> Attempted to Slide It! too early. Strike.", _moduleName, _moduleId);
                     else
-                        Debug.LogFormat("<{0} #{1}> Attempted to Slide It! When action wasn't expected. Strike.", ModuleName, _moduleId);
+                        Debug.LogFormat("<{0} #{1}> Attempted to Slide It! When action wasn't expected. Strike.", _moduleName, _moduleId);
                     _actionSatisfied = false;
                     _actionExpected = false;
                     _actionExpectedAutosolve = false;
@@ -530,9 +663,9 @@ public class BombItScript : MonoBehaviour
                     if (_bombItSequence != null)
                         StopCoroutine(_bombItSequence);
                     if (_solveItExpected)
-                        Debug.LogFormat("<{0} #{1}> Attempted to Slide It! When Solve It! was expected. Strike.", ModuleName, _moduleId);
+                        Debug.LogFormat("<{0} #{1}> Attempted to Slide It! When Solve It! was expected. Strike.", _moduleName, _moduleId);
                     else
-                        Debug.LogFormat("<{0} #{1}> Attempted to Slide It! When {2} was expected. Strike.", ModuleName, _moduleId, _requiredActions[_currentAction]);
+                        Debug.LogFormat("<{0} #{1}> Attempted to Slide It! When {2} was expected. Strike.", _moduleName, _moduleId, _requiredActions[_currentAction]);
                     _actionSatisfied = false;
                     _actionExpected = false;
                     _actionExpectedAutosolve = false;
@@ -599,10 +732,10 @@ public class BombItScript : MonoBehaviour
         {
             PlayKick();
             _voicelinePlayed = true;
-            Audio.PlaySoundAtTransform(_requiredActions[_currentAction].ToString() + CurrentSetup.LetterCode, transform);
-            Debug.LogFormat("[{0} #{1}] {2}", ModuleName, _moduleId, ActionNames[(int)_requiredActions[_currentAction]]);
+            Audio.PlaySoundAtTransform(_requiredActions[_currentAction].ToString() + CurrentSetup.LanguageCode.ToUpperInvariant() + _currentVoiceOver, transform);
+            Debug.LogFormat("[{0} #{1}] {2}", _moduleName, _moduleId, _actionNames[(int)_requiredActions[_currentAction]]);
             if (tpAPI != null && !Autosolved)
-                tpAPI["ircConnectionSendMessage"] = "Module " + GetModuleCode() + " (" + ModuleName + ") says: " + ActionNames[(int)_requiredActions[_currentAction]];
+                tpAPI["ircConnectionSendMessage"] = "Module " + GetModuleCode() + " (" + _moduleName + ") says: " + _actionNames[(int)_requiredActions[_currentAction]];
             yield return new WaitForSeconds(0.3f);
             PlayHat();
             yield return new WaitForSeconds(0.3f);
@@ -654,10 +787,10 @@ public class BombItScript : MonoBehaviour
             _currentAction++;
         }
         _solveItExpected = true;
-        Audio.PlaySoundAtTransform("SolveIt" + CurrentSetup.LetterCode, transform);
-        Debug.LogFormat("[{0} #{1}] {2}", ModuleName, _moduleId, SolveItName);
+        Audio.PlaySoundAtTransform("SolveIt" + CurrentSetup.LanguageCode.ToUpperInvariant(), transform);
+        Debug.LogFormat("[{0} #{1}] {2}", _moduleName, _moduleId, CurrentSetup.SolveItInLanguage);
         if (tpAPI != null && !Autosolved)
-            tpAPI["ircConnectionSendMessage"] = "Module " + GetModuleCode() + " (" + ModuleName + ") says: " + SolveItName;
+            tpAPI["ircConnectionSendMessage"] = "Module " + GetModuleCode() + " (" + _moduleName + ") says: " + CurrentSetup.SolveItInLanguage;
         PlayKick();
         yield return new WaitForSeconds(0.3f);
         PlayHat();
@@ -695,13 +828,13 @@ public class BombItScript : MonoBehaviour
         int ix = Rnd.Range(0, 5);
         if (solve)
         {
-            Audio.PlaySoundAtTransform(EndingNames[ix], transform);
-            Debug.LogFormat("[{0} #{1}] {2}", ModuleName, _moduleId, _solveLines[ix]);
+            Audio.PlaySoundAtTransform(_endingNames[ix], transform);
+            Debug.LogFormat("[{0} #{1}] {2}", _moduleName, _moduleId, _solveLines[ix]);
         }
         else
         {
-            Audio.PlaySoundAtTransform(EndingNames[ix + 5], transform);
-            Debug.LogFormat("[{0} #{1}] {2}", ModuleName, _moduleId, _strikeLines[ix]);
+            Audio.PlaySoundAtTransform(_endingNames[ix + 5], transform);
+            Debug.LogFormat("[{0} #{1}] {2}", _moduleName, _moduleId, _strikeLines[ix]);
         }
     }
 
@@ -728,6 +861,9 @@ public class BombItScript : MonoBehaviour
         command = command.ToLowerInvariant();
         switch (command)
         {
+            case "language":
+                yield return "sendtochat The module is using the " + CurrentSetup.LanguageName + " langauge.";
+                break;
             case "play":
             case "start":
                 if (_sequencePlaying)

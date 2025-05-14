@@ -1,0 +1,10 @@
+{
+  "name": "BombItModule-Editor",
+  "references": [
+    "BombItModule"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": []
+}

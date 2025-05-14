@@ -282,7 +282,7 @@ public class BombItScript : MonoBehaviour
         {
             LanguageName = "Dutch",
             ModuleName = "Bombarderen!",
-            FileCode = "nl",
+            FileCode = "NL",
             ActionNames = new string[]
             {
                 "Indrukken!",
@@ -300,7 +300,7 @@ public class BombItScript : MonoBehaviour
         {
             LanguageName = "Swedish",
             ModuleName = "Bomba den!",
-            FileCode = "sv",
+            FileCode = "SV",
             ActionNames = new string[]
             {
                 "Trycka på den!",
@@ -460,7 +460,7 @@ public class BombItScript : MonoBehaviour
         _currentAction = 0;
         for (int i = 0; i < randActCount; i++)
         {
-            var action = (BombItAction) Rnd.Range(0, Enum.GetValues(typeof(BombItAction)).Length - 1);
+            var action = (BombItAction)Rnd.Range(0, Enum.GetValues(typeof(BombItAction)).Length - 1);
             if (action == BombItAction.SnipIt && canSnip)
             {
                 canSnip = false;
@@ -831,9 +831,9 @@ public class BombItScript : MonoBehaviour
             PlayKick();
             _voicelinePlayed = true;
             Audio.PlaySoundAtTransform(_requiredActions[_currentAction] + CurrentLanguage.FileCode + _currentVoiceOver, transform);
-            Debug.LogFormat("[{0} #{1}] {2}", _moduleName, _moduleId, _actionNames[(int) _requiredActions[_currentAction]]);
+            Debug.LogFormat("[{0} #{1}] {2}", _moduleName, _moduleId, _actionNames[(int)_requiredActions[_currentAction]]);
             if (tpAPI != null && !Autosolved)
-                tpAPI["ircConnectionSendMessage"] = $"Module {GetModuleCode()} ({_moduleName}) says: {_actionNames[(int) _requiredActions[_currentAction]]}";
+                tpAPI["ircConnectionSendMessage"] = $"Module {GetModuleCode()} ({_moduleName}) says: {_actionNames[(int)_requiredActions[_currentAction]]}";
             yield return new WaitForSeconds(0.3f);
             PlayHat();
             yield return new WaitForSeconds(0.3f);
@@ -924,7 +924,7 @@ public class BombItScript : MonoBehaviour
     private void PlayEndingVoiceLine(bool solve)
     {
         var ix = Rnd.Range(0, 5);
-        Audio.PlaySoundAtTransform((solve ? "Solve" : "Strike") + CurrentLanguage.FileCode + (ix + 1), transform);
+        Audio.PlaySoundAtTransform((solve ? "Solve" : "Strike") + (ix + 1) + CurrentLanguage.FileCode, transform);
         Debug.LogFormat("[{0} #{1}] {2}", _moduleName, _moduleId, (solve ? CurrentLanguage.SolveLines : CurrentLanguage.StrikeLines)[ix]);
     }
 

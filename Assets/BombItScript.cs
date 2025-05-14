@@ -188,7 +188,9 @@ public class BombItScript : MonoBehaviour
                 "Ŝovu!",
                 "Klinu!"
             },
-            SolveIt = "Solvu!"
+            SolveIt = "Solvu!",
+            SolveLines = new[] { "Gratulojn!", "Bone farita!", "Mojose!", "Fina venko!", "Reĝo de la maldanĝerigistoj!" },
+            StrikeLines = new[] { "Aj aj aj!", "Domaĝe!", "Fiasko!", "Pliboniĝu aŭ kabeu!", "Ne krokodilu!" },
         },
 
         ["bg"] = new BombItLanguage

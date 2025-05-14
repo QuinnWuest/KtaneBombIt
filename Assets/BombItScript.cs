@@ -1,13 +1,12 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
-using Rnd = UnityEngine.Random;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using Newtonsoft.Json;
+using UnityEngine;
+using Rnd = UnityEngine.Random;
 
 public class BombItScript : MonoBehaviour
 {
@@ -28,8 +27,6 @@ public class BombItScript : MonoBehaviour
     private int _currentAction;
     private List<BombItAction> _requiredActions = new List<BombItAction>();
     private List<BombItAction> _inputActions = new List<BombItAction>();
-    private static readonly string[] _solveLines = new string[] { "POGGERS!", "You win, buddy!", "Sick solo, dude!", "High score!", "Tell your experts... if you have any!" };
-    private static readonly string[] _strikeLines = new string[] { "YOWWWWW!", "Bummer.", "You blew it, dude.", "Do it the same, but, uh, better.", "Strikerooni, frienderini!" };
 
     // Solve It!
     public KMSelectable StatusLightSel;
@@ -82,95 +79,108 @@ public class BombItScript : MonoBehaviour
         public string Note;
     }
 
-    public class BombItLangSetup
+    public class BombItLanguage
     {
+        /// <summary>Name of the language in English.</summary>
         public string LanguageName;
-        public string Label;
-        public string LanguageCode;
-        public string[] ActionNamesInLanguage;
-        public string SolveItInLanguage;
-        public int FontSize;
-        public string[] VoiceOverNames;
-        public bool Supported;
+        /// <summary>Translated name of the module.</summary>
+        public string ModuleName;
+        /// <summary>Uppercase language code used in filenames (e.g. <c>"JA"</c>).</summary>
+        public string FileCode;
+        /// <summary>Translations of the action commands.</summary>
+        public string[] ActionNames;
+        /// <summary>Translation of “Solve it!”.</summary>
+        public string SolveIt;
+        /// <summary>Translated solve messages (only used in logging).</summary>
+        public string[] SolveLines = DefaultSolveLines;
+        private static readonly string[] DefaultSolveLines = { "POGGERS!", "You win, buddy!", "Sick solo, dude!", "High score!", "Tell your experts... if you have any!" };
+        /// <summary>Translated strike messages (only used in logging).</summary>
+        public string[] StrikeLines = DefaultStrikeLines;
+        private static readonly string[] DefaultStrikeLines = { "YOWWWWW!", "Bummer.", "You blew it, dude.", "Do it the same, but, uh, better.", "Strikerooni, frienderini!" };
 
-        public BombItLangSetup(string lang, string label, string code, string[] actionMsgs, string solveMsg, int fontSize, string[] von = null, bool supported = true)
-        {
-            LanguageName = lang;
-            Label = label;
-            ActionNamesInLanguage = actionMsgs;
-            SolveItInLanguage = solveMsg;
-            LanguageCode = code;
-            FontSize = fontSize;
-            VoiceOverNames = von;
-            Supported = supported;
-        }
+        /// <summary>(optional) Font size override. (Default is <c>256</c>.)</summary>
+        public int FontSize = 256;
+        /// <summary>(optional) Names of multiple voice set for the same language.</summary>
+        public string[] VoiceSets = null;
+        /// <summary>(optional) Set to <c>false</c> to disable language. Default is <c>true</c>.</summary>
+        public bool IsSupported = true;
+        /// <summary>Specifies whether this language is English.</summary>
+        public bool IsEnglish = false;
     }
 
-    private static readonly string[][] _presetMissionIds = new string[][]
+    private static readonly Dictionary<string, string> _presetMissionIds = new Dictionary<string, string>
     {
-        new string[2]{ "mod_Communitworion_Communitworion", "ja" },
-        new string[2]{ "mod_awesome7285_missions_Definitely Soloable 1", "ja" },
-        new string[2]{ "mod_eXishMissions_drogryan", "ja" },
-        new string[2]{ "mod_witeksmissionpack_Modules Witek can solo", "ja" },
-        new string[2]{ "mod_arleenmission_Monsplode Red & Blue", "ja" },
-        new string[2]{ "mod_witeksmissionpack_Witek's 47", "ja" }
+        ["mod_Communitworion_Communitworion"] = "ja",
+        ["mod_awesome7285_missions_Definitely Soloable 1"] = "ja",
+        ["mod_eXishMissions_drogryan"] = "ja",
+        ["mod_witeksmissionpack_Modules Witek can solo"] = "ja",
+        ["mod_arleenmission_Monsplode Red & Blue"] = "ja",
+        ["mod_witeksmissionpack_Witek's 47"] = "ja",
     };
 
     private bool _isActivated;
     private string[] _actionNames = new string[5];
     private string _moduleName;
     private string _currentVoiceOver = "";
-    private string[] _endingNames = new string[10] { "Solve1", "Solve2", "Solve3", "Solve4", "Solve5", "Strike1", "Strike2", "Strike3", "Strike4", "Strike5" };
 
-    private readonly BombItLangSetup[] LangSetups = new BombItLangSetup[]
+    private readonly Dictionary<string, BombItLanguage> Languages = new Dictionary<string, BombItLanguage>
     {
-        new BombItLangSetup(
-            lang: "English",
-            label: "Bomb It!",
-            code: "en",
-            actionMsgs: new string[] {
+        ["en"] = new BombItLanguage
+        {
+            LanguageName = "English",
+            IsEnglish = true,
+            ModuleName = "Bomb It!",
+            FileCode = "EN",
+            ActionNames = new string[]
+            {
                 "Press It!",
                 "Flip It!",
                 "Snip It!",
                 "Slide It!",
                 "Tilt It!"
             },
-            solveMsg: "Solve It!",
-            fontSize: 256
-        ),
-        new BombItLangSetup(
-            lang: "Japanese",
-            label: "爆弾！",
-            code: "ja",
-            actionMsgs: new string[] {
+            SolveIt = "Solve It!"
+        },
+
+        ["ja"] = new BombItLanguage
+        {
+            LanguageName = "Japanese",
+            ModuleName = "爆弾！",
+            FileCode = "JA",
+            ActionNames = new string[]
+            {
                 "押して！",
                 "切り替えて！",
                 "切って！",
                 "スライドして！",
                 "傾けて！",
             },
-            solveMsg: "解除！",
-            fontSize: 256
-        ),
-        new BombItLangSetup(
-            lang: "Polish",
-            label: "Zbombarduj to!",
-            code: "pl",
-            actionMsgs: new string[] {
+            SolveIt = "解除！"
+        },
+
+        ["pl"] = new BombItLanguage
+        {
+            LanguageName = "Polish",
+            ModuleName = "Zbombarduj to!",
+            FileCode = "PL",
+            ActionNames = new string[]
+            {
                 "Wciśnij to!",
                 "Przełącz to!",
                 "Utnij to!",
                 "Przesuń to!",
                 "Przechyl to!",
             },
-            solveMsg: "Rozbrój to!",
-            fontSize: 150
-        ),
-        new BombItLangSetup(
-            lang: "Esperanto",
-            label: "Bombu!",
-            code: "eo",
-            actionMsgs: new string[]
+            SolveIt = "Rozbrój to!",
+            FontSize = 150
+        },
+
+        ["eo"] = new BombItLanguage
+        {
+            LanguageName = "Esperanto",
+            ModuleName = "Bombu!",
+            FileCode = "EO",
+            ActionNames = new string[]
             {
                 "Puŝu!",
                 "Ŝaltu!",
@@ -178,14 +188,15 @@ public class BombItScript : MonoBehaviour
                 "Ŝovu!",
                 "Klinu!"
             },
-            solveMsg: "Solvu!",
-            fontSize: 256
-        ),
-        new BombItLangSetup(
-            lang: "Bulgarian",
-            label: "Бомбардирай!",
-            code: "bg",
-            actionMsgs: new string[]
+            SolveIt = "Solvu!"
+        },
+
+        ["bg"] = new BombItLanguage
+        {
+            LanguageName = "Bulgarian",
+            ModuleName = "Бомбардирай!",
+            FileCode = "BG",
+            ActionNames = new string[]
             {
                 "Натисни!",
                 "Обърни!",
@@ -193,14 +204,16 @@ public class BombItScript : MonoBehaviour
                 "Плъзни!",
                 "Наклони!"
             },
-            solveMsg: "Обезвреди!",
-            fontSize: 150
-        ),
-        new BombItLangSetup(
-            lang: "German",
-            label: "Bombardieren!",
-            code: "de",
-            actionMsgs: new string[]
+            SolveIt = "Обезвреди!",
+            FontSize = 150
+        },
+
+        ["de"] = new BombItLanguage
+        {
+            LanguageName = "German",
+            ModuleName = "Bombardieren!",
+            FileCode = "DE",
+            ActionNames = new string[]
             {
                 "Drücken!",
                 "Umlegen!",
@@ -208,46 +221,52 @@ public class BombItScript : MonoBehaviour
                 "Schieben!",
                 "Kippen!"
             },
-            solveMsg: "Lösen!",
-            fontSize: 160,
-            supported: false
-        ),
-        new BombItLangSetup(
-            lang: "Russian",
-            label: "Bomb it!",
-            code: "ru",
-            actionMsgs: new string[] {
+            SolveIt = "Lösen!",
+            FontSize = 160,
+            IsSupported = false
+        },
+
+        ["ru"] = new BombItLanguage
+        {
+            LanguageName = "Russian",
+            ModuleName = "Bomb it!",
+            FileCode = "RU",
+            ActionNames = new string[]
+            {
                 "Press It!",
                 "Flip It!",
                 "Snip It!",
                 "Slide It!",
                 "Tilt It!"
             },
-            solveMsg: "Solve It!",
-            fontSize: 256,
-            von: new string[] { "Rand", "Megum", "Termet" },
-            supported: false
-        ),
-        new BombItLangSetup(
-            lang: "Spanish",
-            label: "¡Bombealo!",
-            code: "es",
-            actionMsgs: new string[] {
+            SolveIt = "Solve It!",
+            VoiceSets = new string[] { "Rand", "Megum", "Termet" },
+            IsSupported = false
+        },
+
+        ["es"] = new BombItLanguage
+        {
+            LanguageName = "Spanish",
+            ModuleName = "¡Bombealo!",
+            FileCode = "ES",
+            ActionNames = new string[]
+            {
                 "¡Púlsalo!",
                 "¡Vóltealo!",
                 "¡Córtalo!",
                 "¡Deslízalo!",
                 "¡Inclínalo!"
             },
-            solveMsg: "¡Desarmalo!",
-            fontSize: 256,
-            supported: false
-        ),
-        new BombItLangSetup(
-            lang: "Turkish",
-            label: "Bombala!",
-            code: "tr",
-            actionMsgs: new string[]
+            SolveIt = "¡Desarmalo!",
+            IsSupported = false
+        },
+
+        ["tr"] = new BombItLanguage
+        {
+            LanguageName = "Turkish",
+            ModuleName = "Bombala!",
+            FileCode = "TR",
+            ActionNames = new string[]
             {
                 "Bas onu!",
                 "Çevir onu!",
@@ -255,15 +274,16 @@ public class BombItScript : MonoBehaviour
                 "Kaydır onu!",
                 "Eğil onu!"
             },
-            solveMsg: "Çöz onu!",
-            fontSize: 256,
-            supported: false
-        ),
-        new BombItLangSetup(
-            lang: "Dutch",
-            label: "Bombarderen!",
-            code: "nl",
-            actionMsgs: new string[]
+            SolveIt = "Çöz onu!",
+            IsSupported = false
+        },
+
+        ["nl"] = new BombItLanguage
+        {
+            LanguageName = "Dutch",
+            ModuleName = "Bombarderen!",
+            FileCode = "nl",
+            ActionNames = new string[]
             {
                 "Indrukken!",
                 "Omzetten!",
@@ -271,15 +291,17 @@ public class BombItScript : MonoBehaviour
                 "Schuiven!",
                 "Kantelen!"
             },
-            solveMsg: "Oplossen!",
-            fontSize: 160,
-            supported: false
-        ),
-        new BombItLangSetup(
-            lang: "Swedish",
-            label: "Bomba den!",
-            code: "sv",
-            actionMsgs: new string[]
+            SolveIt = "Oplossen!",
+            FontSize = 160,
+            IsSupported = false
+        },
+
+        ["sv"] = new BombItLanguage
+        {
+            LanguageName = "Swedish",
+            ModuleName = "Bomba den!",
+            FileCode = "sv",
+            ActionNames = new string[]
             {
                 "Trycka på den!",
                 "Vänd den!",
@@ -287,18 +309,20 @@ public class BombItScript : MonoBehaviour
                 "Glida den!",
                 "Luta den!"
             },
-            solveMsg: "Lös det!",
-            fontSize: 256,
-            supported: false
-        )
+            SolveIt = "Lös det!",
+            IsSupported = false
+        }
     };
 
-    private BombItLangSetup CurrentSetup;
+    private BombItLanguage CurrentLanguage;
 
-    private static readonly int[] _moduleIdCounters = new int[2] { 1, 1 };
+    private static int _moduleIdCounter = 1;
+    private static int _moduleIdCounterTranslated = 1;
 
     private void Start()
     {
+        _moduleId = IsTranslatedModule ? _moduleIdCounterTranslated++ : _moduleIdCounter++;
+
         PlaySel.OnInteract += PlayPress;
         StatusLightSel.OnInteract += StatusLightPress;
         ButtonSel.OnInteract += ButtonPress;
@@ -314,55 +338,55 @@ public class BombItScript : MonoBehaviour
         Module.OnActivate += Activate;
     }
 
-    private string GetLanguageCode()
+    private BombItLanguage GetLanguage()
     {
         if (!IsTranslatedModule)
-            return "en";
+            return Languages["en"];
 
-        var langcodes = LangSetups.Select(i => i.LanguageCode).ToArray();
+        string langCode;
+        BombItLanguage setup;
 
         // Force language if on preset mission.
         var missionID = GetMissionID();
-
-        if (_presetMissionIds.Select(i => i[0]).Contains(missionID))
+        if (_presetMissionIds.TryGetValue(missionID, out langCode) && Languages.TryGetValue(langCode, out setup))
         {
-            var lc = _presetMissionIds[Array.IndexOf(_presetMissionIds.Select(i => i[0]).ToArray(), missionID)][1];
-            var langName = LangSetups[Array.IndexOf(langcodes, lc)].LanguageName;
-            Debug.LogFormat("[Bomb It! Translated #{0}] Preset mission detected. ({1}) Forcing {2} language.", _moduleId, missionID, langName);
-            return lc;
+            Debug.LogFormat("[Bomb It! Translated #{0}] Preset mission detected ({1}). Forcing {2} language.", _moduleId, missionID, setup.LanguageName);
+            return setup;
         }
 
         // Set language based on mission description.
         var missionDesc = KTMissionGetter.Mission.Description;
-        var rgx = missionDesc == null ? null : Regex.Match(missionDesc, @"^\[BombItTranslated]\s+(.*)$", RegexOptions.Multiline);
+        var rgx = missionDesc == null ? null : Regex.Match(missionDesc, @"^\[BombItTranslated\]\s+(.*?)\s*$", RegexOptions.Multiline);
         if (rgx != null && rgx.Success)
         {
-            var lc = rgx.Groups[1].Value;
-            if (langcodes.Contains(lc) && lc != "en")
-                return lc;
-            Debug.LogFormat("[Bomb It! Translated #{0}] Invalid language code “{1}” found in mission description. Referring to ModSettings.", _moduleId, lc);
+            if (Languages.TryGetValue(rgx.Groups[1].Value, out setup) && !setup.IsEnglish)
+                return setup;
+            Debug.LogFormat("[Bomb It! Translated #{0}] Invalid language code “{1}” found in mission description. Referring to ModSettings.", _moduleId, rgx.Groups[1].Value);
         }
+
+        // If on Twitch Plays, pick a language at random
+        if (TwitchPlaysActive)
+            return Languages.Values.Where(l => l.IsSupported && !l.IsEnglish).PickRandom();
 
         // Set language based on Mod settings.
         try
         {
-            ModSettingsJSON settings = JsonConvert.DeserializeObject<ModSettingsJSON>(ModSettings.Settings);
+            var settings = JsonConvert.DeserializeObject<ModSettingsJSON>(ModSettings.Settings);
             if (settings != null)
             {
-                var lc = settings.LanguageCode.ToLowerInvariant();
-                if (langcodes.Contains(lc) && lc != "en")
-                    return lc;
+                var lc = settings.LanguageCode;
+                if (Languages.TryGetValue(lc, out setup) && !setup.IsEnglish)
+                    return setup;
                 Debug.LogFormat("[Bomb It! Translated #{0}] Invalid language code “{1}” found in ModSettings. Using default language, Japanese.", _moduleName, lc);
-                return "ja";
             }
-            Debug.LogFormat("[Bomb It! Translated #{0}] No ModSettings file found. Using default language, Japanese.", _moduleName);
-            return "ja";
+            else
+                Debug.LogFormat("[Bomb It! Translated #{0}] No ModSettings file found. Using default language, Japanese.", _moduleName);
         }
         catch (JsonReaderException e)
         {
             Debug.LogFormat("[Bomb It! Translated #{0}] JSON reading failed with error {1}, using default language, Japanese.", _moduleId, e.Message);
-            return "ja";
         }
+        return Languages["ja"];
     }
 
     private string GetMissionID()
@@ -387,26 +411,20 @@ public class BombItScript : MonoBehaviour
             GameObject tpAPIGameObject = GameObject.Find("TwitchPlays_Info");
             tpAPI = tpAPIGameObject.GetComponent<IDictionary<string, object>>();
         }
-        var langCodes = LangSetups.Select(i => i.LanguageCode).ToArray();
-        int langIx;
-        if (TwitchPlaysActive && IsTranslatedModule)
-            langIx = Enumerable.Range(0, LangSetups.Length).Where(i => LangSetups[i].Supported).Except(new[] { 0 }).PickRandom();
-        else if (IsTranslatedModule)
-            langIx = Array.IndexOf(langCodes, GetLanguageCode());
-        else
-            langIx = 0;
-        CurrentSetup = LangSetups[langIx];
-        _moduleId = _moduleIdCounters[IsTranslatedModule ? 1 : 0]++;
 
-        BombItLabel.text = CurrentSetup.Label;
-        BombItLabel.fontSize = CurrentSetup.FontSize;
+        // Set up language
+        CurrentLanguage = GetLanguage();
+
+        // Set up UI elements
+        BombItLabel.text = CurrentLanguage.ModuleName;
+        BombItLabel.fontSize = CurrentLanguage.FontSize;
         _moduleName = IsTranslatedModule ? "Bomb It! Translated" : "Bomb It!";
-        _actionNames = CurrentSetup.ActionNamesInLanguage.ToArray();
-        _endingNames = _endingNames.Select(i => i.ToString() + CurrentSetup.LanguageCode.ToUpperInvariant()).ToArray();
+        _actionNames = CurrentLanguage.ActionNames.ToArray();
 
+        // Logging
         if (TwitchPlaysActive && IsTranslatedModule)
             Debug.LogFormat("[{0} #{1}] Twitch Plays activated. Choosing random language...", _moduleName, _moduleId);
-        Debug.LogFormat("[{0} #{1}] Loaded module in {2} language.", _moduleName, _moduleId, LangSetups[langIx].LanguageName);
+        Debug.LogFormat("[{0} #{1}] Loaded module in {2} language.", _moduleName, _moduleId, CurrentLanguage.LanguageName);
         _isActivated = true;
     }
 
@@ -431,8 +449,8 @@ public class BombItScript : MonoBehaviour
 
     private void GenerateSequence()
     {
-        if (CurrentSetup.VoiceOverNames != null)
-            _currentVoiceOver = CurrentSetup.VoiceOverNames.PickRandom();
+        if (CurrentLanguage.VoiceSets != null)
+            _currentVoiceOver = CurrentLanguage.VoiceSets.PickRandom();
         bool canSnip = false;
         if (!_isSnipped)
             canSnip = true;
@@ -442,7 +460,7 @@ public class BombItScript : MonoBehaviour
         _currentAction = 0;
         for (int i = 0; i < randActCount; i++)
         {
-            var action = (BombItAction)Rnd.Range(0, Enum.GetValues(typeof(BombItAction)).Length - 1);
+            var action = (BombItAction) Rnd.Range(0, Enum.GetValues(typeof(BombItAction)).Length - 1);
             if (action == BombItAction.SnipIt && canSnip)
             {
                 canSnip = false;
@@ -812,10 +830,10 @@ public class BombItScript : MonoBehaviour
         {
             PlayKick();
             _voicelinePlayed = true;
-            Audio.PlaySoundAtTransform(_requiredActions[_currentAction].ToString() + CurrentSetup.LanguageCode.ToUpperInvariant() + _currentVoiceOver, transform);
-            Debug.LogFormat("[{0} #{1}] {2}", _moduleName, _moduleId, _actionNames[(int)_requiredActions[_currentAction]]);
+            Audio.PlaySoundAtTransform(_requiredActions[_currentAction] + CurrentLanguage.FileCode + _currentVoiceOver, transform);
+            Debug.LogFormat("[{0} #{1}] {2}", _moduleName, _moduleId, _actionNames[(int) _requiredActions[_currentAction]]);
             if (tpAPI != null && !Autosolved)
-                tpAPI["ircConnectionSendMessage"] = "Module " + GetModuleCode() + " (" + _moduleName + ") says: " + _actionNames[(int)_requiredActions[_currentAction]];
+                tpAPI["ircConnectionSendMessage"] = $"Module {GetModuleCode()} ({_moduleName}) says: {_actionNames[(int) _requiredActions[_currentAction]]}";
             yield return new WaitForSeconds(0.3f);
             PlayHat();
             yield return new WaitForSeconds(0.3f);
@@ -867,10 +885,10 @@ public class BombItScript : MonoBehaviour
             _currentAction++;
         }
         _solveItExpected = true;
-        Audio.PlaySoundAtTransform("SolveIt" + CurrentSetup.LanguageCode.ToUpperInvariant(), transform);
-        Debug.LogFormat("[{0} #{1}] {2}", _moduleName, _moduleId, CurrentSetup.SolveItInLanguage);
+        Audio.PlaySoundAtTransform("SolveIt" + CurrentLanguage.FileCode, transform);
+        Debug.LogFormat("[{0} #{1}] {2}", _moduleName, _moduleId, CurrentLanguage.SolveIt);
         if (tpAPI != null && !Autosolved)
-            tpAPI["ircConnectionSendMessage"] = "Module " + GetModuleCode() + " (" + _moduleName + ") says: " + CurrentSetup.SolveItInLanguage;
+            tpAPI["ircConnectionSendMessage"] = $"Module {GetModuleCode()} ({_moduleName}) says: {CurrentLanguage.SolveIt}";
         PlayKick();
         yield return new WaitForSeconds(0.3f);
         PlayHat();
@@ -905,17 +923,9 @@ public class BombItScript : MonoBehaviour
 
     private void PlayEndingVoiceLine(bool solve)
     {
-        int ix = Rnd.Range(0, 5);
-        if (solve)
-        {
-            Audio.PlaySoundAtTransform(_endingNames[ix], transform);
-            Debug.LogFormat("[{0} #{1}] {2}", _moduleName, _moduleId, _solveLines[ix]);
-        }
-        else
-        {
-            Audio.PlaySoundAtTransform(_endingNames[ix + 5], transform);
-            Debug.LogFormat("[{0} #{1}] {2}", _moduleName, _moduleId, _strikeLines[ix]);
-        }
+        var ix = Rnd.Range(0, 5);
+        Audio.PlaySoundAtTransform((solve ? "Solve" : "Strike") + CurrentLanguage.FileCode + (ix + 1), transform);
+        Debug.LogFormat("[{0} #{1}] {2}", _moduleName, _moduleId, (solve ? CurrentLanguage.SolveLines : CurrentLanguage.StrikeLines)[ix]);
     }
 
     private IEnumerator WireStrikeDelay()
@@ -938,11 +948,10 @@ public class BombItScript : MonoBehaviour
 
     private IEnumerator ProcessTwitchCommand(string command)
     {
-        command = command.ToLowerInvariant();
-        switch (command)
+        switch (command.ToLowerInvariant())
         {
             case "language":
-                yield return "sendtochat The module is using the " + CurrentSetup.LanguageName + " langauge.";
+                yield return $"sendtochat The module is using the {CurrentLanguage.LanguageName} langauge.";
                 break;
             case "play":
             case "start":
@@ -1094,6 +1103,6 @@ public class BombItScript : MonoBehaviour
             }
         }
 
-        return closest != null ? closest.Find("MultiDeckerUI").Find("IDText").GetComponent<UnityEngine.UI.Text>().text : null;
+        return closest?.Find("MultiDeckerUI").Find("IDText").GetComponent<UnityEngine.UI.Text>().text;
     }
 }

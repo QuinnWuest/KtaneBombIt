@@ -16,6 +16,7 @@ public class BombItScript : MonoBehaviour
     public KMAudio Audio;
     public KMModSettings ModSettings;
     public bool IsTranslatedModule;
+    private bool IsForcedMission;
 
     public KMSelectable PlaySel;
     public TextMesh BombItLabel;
@@ -133,13 +134,13 @@ public class BombItScript : MonoBehaviour
             FileCode = "EN",
             ActionNames = new string[]
             {
-                "Press It!",
-                "Flip It!",
-                "Snip It!",
-                "Slide It!",
-                "Tilt It!"
+                "Press it!",
+                "Flip it!",
+                "Snip it!",
+                "Slide it!",
+                "Tilt it!"
             },
-            SolveIt = "Solve It!"
+            SolveIt = "Solve it!"
         },
 
         ["ja"] = new BombItLanguage
@@ -155,7 +156,9 @@ public class BombItScript : MonoBehaviour
                 "スライドして！",
                 "傾けて！",
             },
-            SolveIt = "解除！"
+            SolveIt = "解除！",
+            SolveLines = new[] { "最高！", "OK！よく頑張ったね！", "ナイス～！", "ウェーイ！", "う～ん！いいねぇ！" },
+            StrikeLines = new[] { "あ～あ。", "がっかり。", "オメー何やってんの？", "次はもっと頑張ろう。", "ハイ、やらかした～。" }
         },
 
         ["pl"] = new BombItLanguage
@@ -172,6 +175,8 @@ public class BombItScript : MonoBehaviour
                 "Przechyl to!",
             },
             SolveIt = "Rozbrój to!",
+            SolveLines = new[] { "Zrób sobie pierogi po tej sesji.", "Świetnie!", "Wygrałeś!", "Napij się wody, zasłużyłeś na to.", "Dobra robota! Teraz skup się na bombie." },
+            StrikeLines = new[] { "Będę szczery, ale mogłeś się postarać.", "Ach, kurde", "Szkoda.", "Może ci się uda następnym razem.", "Każda dusza ma swoją ciemność, a ty masz jej za dużo." }, 
             FontSize = 150
         },
 
@@ -231,17 +236,17 @@ public class BombItScript : MonoBehaviour
         ["ru"] = new BombItLanguage
         {
             LanguageName = "Russian",
-            ModuleName = "Bomb it!",
+            ModuleName = "Bomb It!",
             FileCode = "RU",
             ActionNames = new string[]
             {
-                "Press It!",
-                "Flip It!",
-                "Snip It!",
-                "Slide It!",
-                "Tilt It!"
+                "Press it!",
+                "Flip it!",
+                "Snip it!",
+                "Slide it!",
+                "Tilt it!"
             },
-            SolveIt = "Solve It!",
+            SolveIt = "Solve it!",
             VoiceSets = new string[] { "Rand", "Megum", "Termet" },
             IsSupported = false
         },
@@ -259,7 +264,7 @@ public class BombItScript : MonoBehaviour
                 "¡Deslízalo!",
                 "¡Inclínalo!"
             },
-            SolveIt = "¡Desarmalo!",
+            SolveIt = "¡Desármalo!",
             IsSupported = false
         },
 
@@ -352,6 +357,7 @@ public class BombItScript : MonoBehaviour
         var missionID = GetMissionID();
         if (_presetMissionIds.TryGetValue(missionID, out langCode) && Languages.TryGetValue(langCode, out setup))
         {
+            IsForcedMission = true;
             Debug.LogFormat("[Bomb It! Translated #{0}] Preset mission detected ({1}). Forcing {2} language.", _moduleId, missionID, setup.LanguageName);
             return setup;
         }
@@ -409,10 +415,7 @@ public class BombItScript : MonoBehaviour
     private void Activate()
     {
         if (TwitchPlaysActive && !Application.isEditor)
-        {
-            GameObject tpAPIGameObject = GameObject.Find("TwitchPlays_Info");
-            tpAPI = tpAPIGameObject.GetComponent<IDictionary<string, object>>();
-        }
+            tpAPI = GameObject.Find("TwitchPlays_Info").GetComponent<IDictionary<string, object>>();
 
         // Set up language
         CurrentLanguage = GetLanguage();
@@ -424,7 +427,7 @@ public class BombItScript : MonoBehaviour
         _actionNames = CurrentLanguage.ActionNames.ToArray();
 
         // Logging
-        if (TwitchPlaysActive && IsTranslatedModule)
+        if (TwitchPlaysActive && IsTranslatedModule && !IsForcedMission)
             Debug.LogFormat("[{0} #{1}] Twitch Plays activated. Choosing random language...", _moduleName, _moduleId);
         Debug.LogFormat("[{0} #{1}] Loaded module in {2} language.", _moduleName, _moduleId, CurrentLanguage.LanguageName);
         _isActivated = true;

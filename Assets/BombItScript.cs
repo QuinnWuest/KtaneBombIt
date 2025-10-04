@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
-using Newtonsoft.Json;
 using UnityEngine;
 using Rnd = UnityEngine.Random;
 
@@ -14,7 +13,6 @@ public class BombItScript : MonoBehaviour
     public KMBombModule Module;
     public KMBombInfo BombInfo;
     public KMAudio Audio;
-    public KMModSettings ModSettings;
     public KMSelectable PlaySel;
     public GameObject FlagObj;
     public Texture[] FlagTextures;
@@ -62,6 +60,11 @@ public class BombItScript : MonoBehaviour
     private bool _wireCanStrike = true;
     private Coroutine _wireStrikeDelay;
 
+    private bool _isActivated;
+    private string[] _actionNames = new string[5];
+    private string _moduleName;
+    private string _currentVoiceOver = "";
+
     public enum BombItAction
     {
         PressIt,
@@ -72,13 +75,12 @@ public class BombItScript : MonoBehaviour
         SolveIt
     }
 
-    public class ModSettingsJSON
+    public class BombItSettings
     {
-        [JsonProperty("language")]
         public string LanguageCode;
-        [JsonProperty("note")]
-        public string Note;
     }
+
+    BombItSettings Settings = new BombItSettings();
 
     public class BombItLanguage
     {
@@ -107,22 +109,37 @@ public class BombItScript : MonoBehaviour
 
     private static readonly Dictionary<string, string> _presetMissionIds = new Dictionary<string, string>
     {
-        ["mod_Communitworion_Communitworion"] = "ja",
-        ["mod_awesome7285_missions_Definitely Soloable 1"] = "ja",
-        ["mod_eXishMissions_drogryan"] = "ja",
-        ["mod_witeksmissionpack_Modules Witek can solo"] = "ja",
-        ["mod_arleenmission_Monsplode Red & Blue"] = "ja",
-        ["mod_witeksmissionpack_Witek's 47"] = "ja",
+        ["mod_Communitworion_Communitworion"] = "JA",
+        ["mod_awesome7285_missions_Definitely Soloable 1"] = "JA",
+        ["mod_eXishMissions_drogryan"] = "JA",
+        ["mod_witeksmissionpack_Modules Witek can solo"] = "JA",
+        ["mod_arleenmission_Monsplode Red & Blue"] = "JA",
+        ["mod_witeksmissionpack_Witek's 47"] = "JA"
     };
 
-    private bool _isActivated;
-    private string[] _actionNames = new string[5];
-    private string _moduleName;
-    private string _currentVoiceOver = "";
+#pragma warning disable 0414
+    private static readonly Dictionary<string, object>[] TweaksEditorSettings = new Dictionary<string, object>[]
+    {
+        new Dictionary<string, object>
+        {
+            { "Filename", "BombItTranslated-settings.txt" },
+            { "Name", "Bomb It! Translated Settings" },
+            { "Listings", new List<Dictionary<string, object>> {
+                new Dictionary<string, object>
+                {
+                    ["Key"] = "LanguageCode",
+                    ["Text"] = "LanguageCode",
+                    ["Type"] = "Dropdown",
+                    ["DropdownItems"] = new List<object> { "JA", "PL", "EO", "BG"}
+                },
+            }}
+        }
+    };
+#pragma warning restore 0414
 
     private static readonly Dictionary<string, BombItLanguage> Languages = new Dictionary<string, BombItLanguage>
     {
-        ["en"] = new BombItLanguage
+        ["EN"] = new BombItLanguage
         {
             // Bomb It!
             LanguageName = "English",
@@ -139,7 +156,7 @@ public class BombItScript : MonoBehaviour
             SolveIt = "Solve it!"
         },
 
-        ["ja"] = new BombItLanguage
+        ["JA"] = new BombItLanguage
         {
             // 爆弾！
             LanguageName = "Japanese",
@@ -157,7 +174,7 @@ public class BombItScript : MonoBehaviour
             StrikeLines = new[] { "あ～あ。", "がっかり。", "オメー何やってんの？", "次はもっと頑張ろう。", "ハイ、やらかした～。" }
         },
 
-        ["pl"] = new BombItLanguage
+        ["PL"] = new BombItLanguage
         {
             // Zbombarduj to!
             LanguageName = "Polish",
@@ -175,7 +192,7 @@ public class BombItScript : MonoBehaviour
             StrikeLines = new[] { "Będę szczery, ale mogłeś się postarać.", "Ach, kurde", "Szkoda.", "Może ci się uda następnym razem.", "Każda dusza ma swoją ciemność, a ty masz jej za dużo." }
         },
 
-        ["eo"] = new BombItLanguage
+        ["EO"] = new BombItLanguage
         {
             // Bombu!
             LanguageName = "Esperanto",
@@ -193,7 +210,7 @@ public class BombItScript : MonoBehaviour
             StrikeLines = new[] { "Aj aj aj!", "Domaĝe!", "Fiasko!", "Pliboniĝu aŭ kabeu!", "Ne krokodilu!" },
         },
 
-        ["bg"] = new BombItLanguage
+        ["BG"] = new BombItLanguage
         {
             // Бомбардирай!
             LanguageName = "Bulgarian",
@@ -209,7 +226,7 @@ public class BombItScript : MonoBehaviour
             SolveIt = "Обезвреди!"
         },
 
-        ["de"] = new BombItLanguage
+        ["DE"] = new BombItLanguage
         {
             // Bombardieren!
             LanguageName = "German",
@@ -226,7 +243,7 @@ public class BombItScript : MonoBehaviour
             IsSupported = false
         },
 
-        ["ru"] = new BombItLanguage
+        ["RU"] = new BombItLanguage
         {
             // Bomb It!
             LanguageName = "Russian",
@@ -244,7 +261,7 @@ public class BombItScript : MonoBehaviour
             IsSupported = false
         },
 
-        ["es"] = new BombItLanguage
+        ["ES"] = new BombItLanguage
         {
             // Bombealo!
             LanguageName = "Spanish",
@@ -261,7 +278,7 @@ public class BombItScript : MonoBehaviour
             IsSupported = false
         },
 
-        ["tr"] = new BombItLanguage
+        ["TR"] = new BombItLanguage
         {
             // Bombala!
             LanguageName = "Turkish",
@@ -278,7 +295,7 @@ public class BombItScript : MonoBehaviour
             IsSupported = false
         },
 
-        ["nl"] = new BombItLanguage
+        ["NL"] = new BombItLanguage
         {
             // Bombarderen!
             LanguageName = "Dutch",
@@ -295,7 +312,7 @@ public class BombItScript : MonoBehaviour
             IsSupported = false
         },
 
-        ["sv"] = new BombItLanguage
+        ["SV"] = new BombItLanguage
         {
             // Bomba den!
             LanguageName = "Swedish",
@@ -321,6 +338,8 @@ public class BombItScript : MonoBehaviour
     private void Start()
     {
         _moduleId = IsTranslatedModule ? _moduleIdCounterTranslated++ : _moduleIdCounter++;
+        FlagObj.SetActive(false);
+        Module.OnActivate += Activate;
 
         PlaySel.OnInteract += PlayPress;
         StatusLightSel.OnInteract += StatusLightPress;
@@ -330,17 +349,15 @@ public class BombItScript : MonoBehaviour
         WireSel.OnInteract += WirePress;
         SliderSel.OnInteract += SliderPress;
         SliderSel.OnInteractEnded += SliderRelease;
-
         for (int i = 0; i < SliderRegionSels.Length; i++)
             SliderRegionSels[i].OnHighlight += SliderHighlight(i);
 
-        Module.OnActivate += Activate;
     }
 
     private BombItLanguage GetLanguage()
     {
         if (!IsTranslatedModule)
-            return Languages["en"];
+            return Languages["EN"];
 
         string langCode;
         BombItLanguage setup;
@@ -369,24 +386,17 @@ public class BombItScript : MonoBehaviour
             return Languages.Values.Where(l => l.IsSupported && !l.IsEnglish).PickRandom();
 
         // Set language based on Mod settings.
-        try
-        {
-            var settings = JsonConvert.DeserializeObject<ModSettingsJSON>(ModSettings.Settings);
-            if (settings != null)
-            {
-                var lc = settings.LanguageCode;
-                if (Languages.TryGetValue(lc, out setup) && !setup.IsEnglish)
-                    return setup;
-                Debug.LogFormat("[Bomb It! Translated #{0}] Invalid language code “{1}” found in ModSettings. Using default language, Japanese.", _moduleName, lc);
-            }
-            else
-                Debug.LogFormat("[Bomb It! Translated #{0}] No ModSettings file found. Using default language, Japanese.", _moduleName);
-        }
-        catch (JsonReaderException e)
-        {
-            Debug.LogFormat("[Bomb It! Translated #{0}] JSON reading failed with error {1}, using default language, Japanese.", _moduleId, e.Message);
-        }
-        return Languages["ja"];
+        var modConfig = new ModConfig<BombItSettings>("BombItTranslated-settings");
+        Settings = modConfig.Read();
+
+        if (Settings.LanguageCode == null)
+            Settings.LanguageCode = "JA";
+        modConfig.Write(Settings);
+
+        if (Settings.LanguageCode != null && Languages.TryGetValue(Settings.LanguageCode, out setup))
+            return setup;
+
+        return Languages["JA"];
     }
 
     private string GetMissionID()
@@ -422,6 +432,8 @@ public class BombItScript : MonoBehaviour
         if (TwitchPlaysActive && IsTranslatedModule && !IsForcedMission)
             Debug.LogFormat("[{0} #{1}] Twitch Plays activated. Choosing random language...", _moduleName, _moduleId);
         Debug.LogFormat("[{0} #{1}] Loaded module in {2} language.", _moduleName, _moduleId, CurrentLanguage.LanguageName);
+
+        FlagObj.SetActive(true);
         _isActivated = true;
     }
 

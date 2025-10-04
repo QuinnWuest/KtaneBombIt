@@ -3109,7 +3109,6 @@ MonoBehaviour:
   Module: {fileID: 114954870232488964}
   BombInfo: {fileID: 114904908526487408}
   Audio: {fileID: 114657447923147966}
-  ModSettings: {fileID: 114290016467050360}
   PlaySel: {fileID: 114911834233262228}
   FlagObj: {fileID: 1689644458630294}
   FlagTextures:

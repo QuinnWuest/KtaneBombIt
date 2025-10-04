@@ -15,11 +15,11 @@ public class BombItScript : MonoBehaviour
     public KMBombInfo BombInfo;
     public KMAudio Audio;
     public KMModSettings ModSettings;
+    public KMSelectable PlaySel;
+    public GameObject FlagObj;
+    public Texture[] FlagTextures;
     public bool IsTranslatedModule;
     private bool IsForcedMission;
-
-    public KMSelectable PlaySel;
-    public TextMesh BombItLabel;
 
     private int _moduleId;
     private bool _moduleSolved;
@@ -84,8 +84,6 @@ public class BombItScript : MonoBehaviour
     {
         /// <summary>Name of the language in English.</summary>
         public string LanguageName;
-        /// <summary>Translated name of the module.</summary>
-        public string ModuleName;
         /// <summary>Uppercase language code used in filenames (e.g. <c>"JA"</c>).</summary>
         public string FileCode;
         /// <summary>Translations of the action commands.</summary>
@@ -99,8 +97,6 @@ public class BombItScript : MonoBehaviour
         public string[] StrikeLines = DefaultStrikeLines;
         private static readonly string[] DefaultStrikeLines = { "YOWWWWW!", "Bummer.", "You blew it, dude.", "Do it the same, but, uh, better.", "Strikerooni, frienderini!" };
 
-        /// <summary>(optional) Font size override. (Default is <c>256</c>.)</summary>
-        public int FontSize = 256;
         /// <summary>(optional) Names of multiple voice set for the same language.</summary>
         public string[] VoiceSets = null;
         /// <summary>(optional) Set to <c>false</c> to disable language. Default is <c>true</c>.</summary>
@@ -124,13 +120,13 @@ public class BombItScript : MonoBehaviour
     private string _moduleName;
     private string _currentVoiceOver = "";
 
-    private readonly Dictionary<string, BombItLanguage> Languages = new Dictionary<string, BombItLanguage>
+    private static readonly Dictionary<string, BombItLanguage> Languages = new Dictionary<string, BombItLanguage>
     {
         ["en"] = new BombItLanguage
         {
+            // Bomb It!
             LanguageName = "English",
             IsEnglish = true,
-            ModuleName = "Bomb It!",
             FileCode = "EN",
             ActionNames = new string[]
             {
@@ -145,8 +141,8 @@ public class BombItScript : MonoBehaviour
 
         ["ja"] = new BombItLanguage
         {
+            // 爆弾！
             LanguageName = "Japanese",
-            ModuleName = "爆弾！",
             FileCode = "JA",
             ActionNames = new string[]
             {
@@ -163,8 +159,8 @@ public class BombItScript : MonoBehaviour
 
         ["pl"] = new BombItLanguage
         {
+            // Zbombarduj to!
             LanguageName = "Polish",
-            ModuleName = "Zbombarduj to!",
             FileCode = "PL",
             ActionNames = new string[]
             {
@@ -176,14 +172,13 @@ public class BombItScript : MonoBehaviour
             },
             SolveIt = "Rozbrój to!",
             SolveLines = new[] { "Zrób sobie pierogi po tej sesji.", "Świetnie!", "Wygrałeś!", "Napij się wody, zasłużyłeś na to.", "Dobra robota! Teraz skup się na bombie." },
-            StrikeLines = new[] { "Będę szczery, ale mogłeś się postarać.", "Ach, kurde", "Szkoda.", "Może ci się uda następnym razem.", "Każda dusza ma swoją ciemność, a ty masz jej za dużo." }, 
-            FontSize = 150
+            StrikeLines = new[] { "Będę szczery, ale mogłeś się postarać.", "Ach, kurde", "Szkoda.", "Może ci się uda następnym razem.", "Każda dusza ma swoją ciemność, a ty masz jej za dużo." }
         },
 
         ["eo"] = new BombItLanguage
         {
+            // Bombu!
             LanguageName = "Esperanto",
-            ModuleName = "Bombu!",
             FileCode = "EO",
             ActionNames = new string[]
             {
@@ -200,8 +195,8 @@ public class BombItScript : MonoBehaviour
 
         ["bg"] = new BombItLanguage
         {
+            // Бомбардирай!
             LanguageName = "Bulgarian",
-            ModuleName = "Бомбардирай!",
             FileCode = "BG",
             ActionNames = new string[]
             {
@@ -211,14 +206,13 @@ public class BombItScript : MonoBehaviour
                 "Плъзни!",
                 "Наклони!"
             },
-            SolveIt = "Обезвреди!",
-            FontSize = 150
+            SolveIt = "Обезвреди!"
         },
 
         ["de"] = new BombItLanguage
         {
+            // Bombardieren!
             LanguageName = "German",
-            ModuleName = "Bombardieren!",
             FileCode = "DE",
             ActionNames = new string[]
             {
@@ -229,14 +223,13 @@ public class BombItScript : MonoBehaviour
                 "Kippen!"
             },
             SolveIt = "Lösen!",
-            FontSize = 160,
             IsSupported = false
         },
 
         ["ru"] = new BombItLanguage
         {
+            // Bomb It!
             LanguageName = "Russian",
-            ModuleName = "Bomb It!",
             FileCode = "RU",
             ActionNames = new string[]
             {
@@ -253,8 +246,8 @@ public class BombItScript : MonoBehaviour
 
         ["es"] = new BombItLanguage
         {
+            // Bombealo!
             LanguageName = "Spanish",
-            ModuleName = "¡Bombealo!",
             FileCode = "ES",
             ActionNames = new string[]
             {
@@ -270,8 +263,8 @@ public class BombItScript : MonoBehaviour
 
         ["tr"] = new BombItLanguage
         {
+            // Bombala!
             LanguageName = "Turkish",
-            ModuleName = "Bombala!",
             FileCode = "TR",
             ActionNames = new string[]
             {
@@ -287,8 +280,8 @@ public class BombItScript : MonoBehaviour
 
         ["nl"] = new BombItLanguage
         {
+            // Bombarderen!
             LanguageName = "Dutch",
-            ModuleName = "Bombarderen!",
             FileCode = "NL",
             ActionNames = new string[]
             {
@@ -299,14 +292,13 @@ public class BombItScript : MonoBehaviour
                 "Kantelen!"
             },
             SolveIt = "Oplossen!",
-            FontSize = 160,
             IsSupported = false
         },
 
         ["sv"] = new BombItLanguage
         {
+            // Bomba den!
             LanguageName = "Swedish",
-            ModuleName = "Bomba den!",
             FileCode = "SV",
             ActionNames = new string[]
             {
@@ -420,9 +412,9 @@ public class BombItScript : MonoBehaviour
         // Set up language
         CurrentLanguage = GetLanguage();
 
+        if (IsTranslatedModule)
+            FlagObj.GetComponent<MeshRenderer>().material.mainTexture = FlagTextures[Array.IndexOf(FlagTextures.Select(i => i.name).ToArray(), CurrentLanguage.FileCode)];
         // Set up UI elements
-        BombItLabel.text = CurrentLanguage.ModuleName;
-        BombItLabel.fontSize = CurrentLanguage.FontSize;
         _moduleName = IsTranslatedModule ? "Bomb It! Translated" : "Bomb It!";
         _actionNames = CurrentLanguage.ActionNames.ToArray();
 

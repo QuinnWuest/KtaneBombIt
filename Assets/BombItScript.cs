@@ -338,7 +338,8 @@ public class BombItScript : MonoBehaviour
     private void Start()
     {
         _moduleId = IsTranslatedModule ? _moduleIdCounterTranslated++ : _moduleIdCounter++;
-        FlagObj.SetActive(false);
+        if (IsTranslatedModule)
+            FlagObj.SetActive(false);
         Module.OnActivate += Activate;
 
         PlaySel.OnInteract += PlayPress;
@@ -433,7 +434,8 @@ public class BombItScript : MonoBehaviour
             Debug.LogFormat("[{0} #{1}] Twitch Plays activated. Choosing random language...", _moduleName, _moduleId);
         Debug.LogFormat("[{0} #{1}] Loaded module in {2} language.", _moduleName, _moduleId, CurrentLanguage.LanguageName);
 
-        FlagObj.SetActive(true);
+        if (IsTranslatedModule)
+            FlagObj.SetActive(true);
         _isActivated = true;
     }
 

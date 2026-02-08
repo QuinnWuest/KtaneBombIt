@@ -351,7 +351,10 @@ public class BombItScript : MonoBehaviour
         SliderSel.OnInteract += SliderPress;
         SliderSel.OnInteractEnded += SliderRelease;
         for (int i = 0; i < SliderRegionSels.Length; i++)
+        {
             SliderRegionSels[i].OnHighlight += SliderHighlight(i);
+            SliderRegionSels[i].OnInteract += UnityEditorOnlySliderPress(i);
+        }
 
     }
 
@@ -491,7 +494,7 @@ public class BombItScript : MonoBehaviour
     private bool StatusLightPress()
     {
         StatusLightSel.AddInteractionPunch(0.4f);
-        if (!_sequencePlaying)
+        if (_moduleSolved || !_isActivated || !_sequencePlaying)
             return false;
         if (!_actionExpected && _sequencePlaying)
         {
@@ -501,9 +504,9 @@ public class BombItScript : MonoBehaviour
             if (_bombItSequence != null)
                 StopCoroutine(_bombItSequence);
             if (_voicelinePlayed)
-                Debug.LogFormat("<{0} #{1}> Attempted to Solve It! too early. Strike.", _moduleName, _moduleId);
+                Debug.LogFormat("<{0} #{1}> Attempted to Solve it! too early. Strike.", _moduleName, _moduleId);
             else
-                Debug.LogFormat("<{0} #{1}> Attempted to Solve It! When action wasn't expected. Strike.", _moduleName, _moduleId);
+                Debug.LogFormat("<{0} #{1}> Attempted to Solve it! When action wasn't expected. Strike.", _moduleName, _moduleId);
             _actionSatisfied = false;
             _actionExpected = false;
             _actionExpectedAutosolve = false;
@@ -518,7 +521,7 @@ public class BombItScript : MonoBehaviour
             _sequencePlaying = false;
             if (_bombItSequence != null)
                 StopCoroutine(_bombItSequence);
-            Debug.LogFormat("<{0} #{1}> Attempted to Solve It! When {2} was expected. Strike.", _moduleName, _moduleId, _requiredActions[_currentAction]);
+            Debug.LogFormat("<{0} #{1}> Attempted to Solve it! When {2} was expected. Strike.", _moduleName, _moduleId, _requiredActions[_currentAction]);
             _actionSatisfied = false;
             _actionExpected = false;
             _actionExpectedAutosolve = false;
@@ -539,7 +542,7 @@ public class BombItScript : MonoBehaviour
         ButtonSel.AddInteractionPunch(0.5f);
         StartCoroutine(AnimateButton(0f, -0.05f));
         Audio.PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.BigButtonPress, transform);
-        if (!_sequencePlaying)
+        if (_moduleSolved || !_isActivated || !_sequencePlaying)
             return false;
         if (!_actionExpected && _sequencePlaying)
         {
@@ -549,9 +552,9 @@ public class BombItScript : MonoBehaviour
             if (_bombItSequence != null)
                 StopCoroutine(_bombItSequence);
             if (_voicelinePlayed)
-                Debug.LogFormat("<{0} #{1}> Attempted to Press It! too early. Strike.", _moduleName, _moduleId);
+                Debug.LogFormat("<{0} #{1}> Attempted to Press it! too early. Strike.", _moduleName, _moduleId);
             else
-                Debug.LogFormat("<{0} #{1}> Attempted to Press It! When action wasn't expected. Strike.", _moduleName, _moduleId);
+                Debug.LogFormat("<{0} #{1}> Attempted to Press it! When action wasn't expected. Strike.", _moduleName, _moduleId);
             _actionSatisfied = false;
             _actionExpected = false;
             _actionExpectedAutosolve = false;
@@ -566,7 +569,7 @@ public class BombItScript : MonoBehaviour
             _sequencePlaying = false;
             if (_bombItSequence != null)
                 StopCoroutine(_bombItSequence);
-            Debug.LogFormat("<{0} #{1}> Attempted to Press It! When {2} was expected. Strike.", _moduleName, _moduleId, _requiredActions[_currentAction]);
+            Debug.LogFormat("<{0} #{1}> Attempted to Press it! When {2} was expected. Strike.", _moduleName, _moduleId, _requiredActions[_currentAction]);
             _actionSatisfied = false;
             _actionExpected = false;
             _actionExpectedAutosolve = false;
@@ -617,9 +620,9 @@ public class BombItScript : MonoBehaviour
             if (_bombItSequence != null)
                 StopCoroutine(_bombItSequence);
             if (_voicelinePlayed)
-                Debug.LogFormat("<{0} #{1}> Attempted to Flip It! too early. Strike.", _moduleName, _moduleId);
+                Debug.LogFormat("<{0} #{1}> Attempted to Flip it! too early. Strike.", _moduleName, _moduleId);
             else
-                Debug.LogFormat("<{0} #{1}> Attempted to Flip It! When action wasn't expected. Strike.", _moduleName, _moduleId);
+                Debug.LogFormat("<{0} #{1}> Attempted to Flip it! When action wasn't expected. Strike.", _moduleName, _moduleId);
             _actionSatisfied = false;
             _actionExpected = false;
             _actionExpectedAutosolve = false;
@@ -635,9 +638,9 @@ public class BombItScript : MonoBehaviour
             if (_bombItSequence != null)
                 StopCoroutine(_bombItSequence);
             if (_solveItExpected)
-                Debug.LogFormat("<{0} #{1}> Attempted to Flip It! When Solve It! was expected. Strike.", _moduleName, _moduleId);
+                Debug.LogFormat("<{0} #{1}> Attempted to Flip it! When Solve it! was expected. Strike.", _moduleName, _moduleId);
             else
-                Debug.LogFormat("<{0} #{1}> Attempted to Flip It! When {2} was expected. Strike.", _moduleName, _moduleId, _requiredActions[_currentAction]);
+                Debug.LogFormat("<{0} #{1}> Attempted to Flip it! When {2} was expected. Strike.", _moduleName, _moduleId, _requiredActions[_currentAction]);
             _actionSatisfied = false;
             _actionExpected = false;
             _actionExpectedAutosolve = false;
@@ -689,9 +692,9 @@ public class BombItScript : MonoBehaviour
             if (_bombItSequence != null)
                 StopCoroutine(_bombItSequence);
             if (_voicelinePlayed)
-                Debug.LogFormat("<{0} #{1}> Attempted to Snip It! too early. Strike.", _moduleName, _moduleId);
+                Debug.LogFormat("<{0} #{1}> Attempted to Snip it! too early. Strike.", _moduleName, _moduleId);
             else
-                Debug.LogFormat("<{0} #{1}> Attempted to Snip It! When action wasn't expected. Strike.", _moduleName, _moduleId);
+                Debug.LogFormat("<{0} #{1}> Attempted to Snip it! When action wasn't expected. Strike.", _moduleName, _moduleId);
             _actionSatisfied = false;
             _actionExpected = false;
             _actionExpectedAutosolve = false;
@@ -707,9 +710,9 @@ public class BombItScript : MonoBehaviour
             if (_bombItSequence != null)
                 StopCoroutine(_bombItSequence);
             if (_solveItExpected)
-                Debug.LogFormat("<{0} #{1}> Attempted to Snip It! When Solve It! was expected. Strike.", _moduleName, _moduleId);
+                Debug.LogFormat("<{0} #{1}> Attempted to Snip it! When Solve it! was expected. Strike.", _moduleName, _moduleId);
             else
-                Debug.LogFormat("<{0} #{1}> Attempted to Snip It! When {2} was expected. Strike.", _moduleName, _moduleId, _requiredActions[_currentAction]);
+                Debug.LogFormat("<{0} #{1}> Attempted to Snip it! When {2} was expected. Strike.", _moduleName, _moduleId, _requiredActions[_currentAction]);
             _actionSatisfied = false;
             _actionExpected = false;
             _actionExpectedAutosolve = false;
@@ -734,60 +737,76 @@ public class BombItScript : MonoBehaviour
         _holdingSlider = false;
     }
 
+    private KMSelectable.OnInteractHandler UnityEditorOnlySliderPress(int i)
+    {
+        return delegate ()
+        {
+            if (!Application.isEditor)
+                return false;
+            HandleSlider(i);
+            return false;
+        };
+    }
+
     private Action SliderHighlight(int i)
     {
         return delegate ()
         {
             if (!_holdingSlider)
                 return;
-            if (_currentSliderPos != i)
+            HandleSlider(i);
+        };
+    }
+
+    private void HandleSlider(int i)
+    {
+        if (_currentSliderPos != i)
+        {
+            _currentSliderPos = i;
+            StartCoroutine(MoveSlider());
+            if (_moduleSolved || !_isActivated || !_sequencePlaying)
+                return;
+            if (!_actionExpected && _sequencePlaying)
             {
-                _currentSliderPos = i;
-                StartCoroutine(MoveSlider());
-                if (_moduleSolved || !_sequencePlaying)
-                    return;
-                if (!_actionExpected && _sequencePlaying)
-                {
-                    Module.HandleStrike();
-                    PlayEndingVoiceLine(false);
-                    _sequencePlaying = false;
-                    if (_bombItSequence != null)
-                        StopCoroutine(_bombItSequence);
-                    if (_voicelinePlayed)
-                        Debug.LogFormat("<{0} #{1}> Attempted to Slide It! too early. Strike.", _moduleName, _moduleId);
-                    else
-                        Debug.LogFormat("<{0} #{1}> Attempted to Slide It! When action wasn't expected. Strike.", _moduleName, _moduleId);
-                    _actionSatisfied = false;
-                    _actionExpected = false;
-                    _actionExpectedAutosolve = false;
-                    _voicelinePlayed = false;
-                    return;
-                }
-                _inputActions.Add(BombItAction.SlideIt);
-                if (_solveItExpected || _inputActions[_currentAction] != _requiredActions[_currentAction])
-                {
-                    Module.HandleStrike();
-                    PlayEndingVoiceLine(false);
-                    _sequencePlaying = false;
-                    if (_bombItSequence != null)
-                        StopCoroutine(_bombItSequence);
-                    if (_solveItExpected)
-                        Debug.LogFormat("<{0} #{1}> Attempted to Slide It! When Solve It! was expected. Strike.", _moduleName, _moduleId);
-                    else
-                        Debug.LogFormat("<{0} #{1}> Attempted to Slide It! When {2} was expected. Strike.", _moduleName, _moduleId, _requiredActions[_currentAction]);
-                    _actionSatisfied = false;
-                    _actionExpected = false;
-                    _actionExpectedAutosolve = false;
-                    _voicelinePlayed = false;
-                    return;
-                }
-                Audio.PlaySoundAtTransform("Slide", transform);
-                _actionSatisfied = true;
+                Module.HandleStrike();
+                PlayEndingVoiceLine(false);
+                _sequencePlaying = false;
+                if (_bombItSequence != null)
+                    StopCoroutine(_bombItSequence);
+                if (_voicelinePlayed)
+                    Debug.LogFormat("<{0} #{1}> Attempted to Slide it! too early. Strike.", _moduleName, _moduleId);
+                else
+                    Debug.LogFormat("<{0} #{1}> Attempted to Slide it! When action wasn't expected. Strike.", _moduleName, _moduleId);
+                _actionSatisfied = false;
                 _actionExpected = false;
                 _actionExpectedAutosolve = false;
+                _voicelinePlayed = false;
                 return;
             }
-        };
+            _inputActions.Add(BombItAction.SlideIt);
+            if (_solveItExpected || _inputActions[_currentAction] != _requiredActions[_currentAction])
+            {
+                Module.HandleStrike();
+                PlayEndingVoiceLine(false);
+                _sequencePlaying = false;
+                if (_bombItSequence != null)
+                    StopCoroutine(_bombItSequence);
+                if (_solveItExpected)
+                    Debug.LogFormat("<{0} #{1}> Attempted to Slide it! When Solve it! was expected. Strike.", _moduleName, _moduleId);
+                else
+                    Debug.LogFormat("<{0} #{1}> Attempted to Slide it! When {2} was expected. Strike.", _moduleName, _moduleId, _requiredActions[_currentAction]);
+                _actionSatisfied = false;
+                _actionExpected = false;
+                _actionExpectedAutosolve = false;
+                _voicelinePlayed = false;
+                return;
+            }
+            Audio.PlaySoundAtTransform("Slide", transform);
+            _actionSatisfied = true;
+            _actionExpected = false;
+            _actionExpectedAutosolve = false;
+            return;
+        }
     }
 
     private IEnumerator MoveSlider()

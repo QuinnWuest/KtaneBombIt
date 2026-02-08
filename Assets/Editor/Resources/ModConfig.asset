@@ -16,11 +16,11 @@ MonoBehaviour:
   author: Quinn Wuest
   description: "Press It! Flip It! Snip It! Slide It! Tilt It! Boom It... no, don't
     do that last one please...\n\nDeveloped by Quinn Wuest\n\nVoiceovers:\n- English:
-    yabbaguy\n- Japanese: LR\n- Polish: WitekWitek\n- Esperanto: Timwi\n- Bulgarian:
-    Dani was here\n\nChanging the language of Bomb It! Translated can be done in mod
-    settings.\nThe language can be forced on missions via the description. Include
-    \"[BombItTranslated] XX\" in the description, where XX is the two-letter language
-    code.\n\nIf you want to record voice lines for Bomb It! in your own language,
+    yabbaguy\n\n- Bulgarian: Dani was here\n- Esperanto: Timwi\n- Japanese: LR\n-
+    Polish: WitekWitek\n\nChanging the language of Bomb It! Translated can be done
+    in mod settings.\nThe language can be forced on missions via the description.
+    Include \"[BombItTranslated] XX\" in the description, where XX is the two-letter
+    language code.\n\nIf you want to record voice lines for Bomb It! in your own language,
     DM me on Discord @quinnwuest\n\n[url=https://ktane.timwi.de/HTML/Bomb%20It!.html]Manual
     HTML[/url].\r\n[url=https://ktane.timwi.de/HTML/Bomb%20It!.pdf]Manual PDF[/url]."
   version: 1.0

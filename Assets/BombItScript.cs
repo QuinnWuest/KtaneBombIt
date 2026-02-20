@@ -27,29 +27,31 @@ public class BombItScript : MonoBehaviour
     private List<BombItAction> _requiredActions = new List<BombItAction>();
     private List<BombItAction> _inputActions = new List<BombItAction>();
 
-    // Solve It!
+    // Solve it!
     public KMSelectable StatusLightSel;
-    // Tilt It!
+    // Tilt it!
     public GameObject Background;
     private bool _isTilted;
-    // Press It!
+    // Press it!
     public KMSelectable ButtonSel;
     public GameObject ButtonCapObj;
-    // Flip It!
+    private Coroutine _buttonAnimation;
+    // Flip it!
     public KMSelectable SwitchSel;
     public GameObject SwitchObj;
     private bool _switchState;
-    private bool _isSwitchAnimating;
-    // Snip It!
+    private Coroutine _switchAnimation;
+    // Snip it!
     public KMSelectable WireSel;
     public GameObject[] WireObjs;
     private bool _isSnipped;
-    // Slide It!
+    // Slide it!
     public KMSelectable SliderSel;
     public KMSelectable[] SliderRegionSels;
     public GameObject SliderObj;
     private bool _holdingSlider;
     private int _currentSliderPos;
+    private Coroutine _sliderAnimation;
 
     private bool _sequencePlaying;
     private bool _actionExpected;
@@ -130,7 +132,7 @@ public class BombItScript : MonoBehaviour
                     ["Key"] = "LanguageCode",
                     ["Text"] = "LanguageCode",
                     ["Type"] = "Dropdown",
-                    ["DropdownItems"] = new List<object> { "JA", "PL", "EO", "BG"}
+                    ["DropdownItems"] = new List<object> { "BG", "EO", "JA", "PL", "Random"}
                 },
             }}
         }
@@ -355,7 +357,6 @@ public class BombItScript : MonoBehaviour
             SliderRegionSels[i].OnHighlight += SliderHighlight(i);
             SliderRegionSels[i].OnInteract += UnityEditorOnlySliderPress(i);
         }
-
     }
 
     private BombItLanguage GetLanguage()
@@ -381,7 +382,10 @@ public class BombItScript : MonoBehaviour
         if (rgx != null && rgx.Success)
         {
             if (Languages.TryGetValue(rgx.Groups[1].Value, out setup) && !setup.IsEnglish)
+            {
+                Debug.LogFormat("[Bomb It! Translated #{0}] Language code “{1}” found in mission description. Using {2} language.", _moduleId, setup.FileCode, setup.LanguageName);
                 return setup;
+            }
             Debug.LogFormat("[Bomb It! Translated #{0}] Invalid language code “{1}” found in mission description. Referring to ModSettings.", _moduleId, rgx.Groups[1].Value);
         }
 
@@ -393,9 +397,12 @@ public class BombItScript : MonoBehaviour
         var modConfig = new ModConfig<BombItSettings>("BombItTranslated-settings");
         Settings = modConfig.Read();
 
-        if (Settings.LanguageCode == null)
+        if (string.IsNullOrEmpty(Settings.LanguageCode))
             Settings.LanguageCode = "JA";
         modConfig.Write(Settings);
+
+        if (Settings.LanguageCode == "Random")
+            return Languages.Values.Where(i => i.IsSupported && !i.IsEnglish).PickRandom();
 
         if (Settings.LanguageCode != null && Languages.TryGetValue(Settings.LanguageCode, out setup))
             return setup;
@@ -540,7 +547,9 @@ public class BombItScript : MonoBehaviour
     private bool ButtonPress()
     {
         ButtonSel.AddInteractionPunch(0.5f);
-        StartCoroutine(AnimateButton(0f, -0.05f));
+        if (_buttonAnimation != null)
+            StopCoroutine(_buttonAnimation);
+        _buttonAnimation = StartCoroutine(AnimateButton(-0.05f));
         Audio.PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.BigButtonPress, transform);
         if (_moduleSolved || !_isActivated || !_sequencePlaying)
             return false;
@@ -585,31 +594,34 @@ public class BombItScript : MonoBehaviour
 
     private void ButtonRelease()
     {
-        StartCoroutine(AnimateButton(-0.05f, 0f));
+        if (_buttonAnimation != null)
+            StopCoroutine(_buttonAnimation);
+        _buttonAnimation = StartCoroutine(AnimateButton(0f));
         Audio.PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.BigButtonRelease, transform);
     }
 
-    private IEnumerator AnimateButton(float a, float b)
+    private IEnumerator AnimateButton(float goalPos)
     {
         var duration = 0.1f;
         var elapsed = 0f;
+        var startPos = ButtonCapObj.transform.localPosition.y;
         while (elapsed < duration)
         {
-            ButtonCapObj.transform.localPosition = new Vector3(0f, Easing.InOutQuad(elapsed, a, b, duration), 0f);
+            ButtonCapObj.transform.localPosition = new Vector3(0f, Easing.InOutQuad(elapsed, startPos, goalPos, duration), 0f);
             yield return null;
             elapsed += Time.deltaTime;
         }
-        ButtonCapObj.transform.localPosition = new Vector3(0f, b, 0f);
+        ButtonCapObj.transform.localPosition = new Vector3(0f, goalPos, 0f);
     }
 
     private bool SwitchFlip()
     {
         SwitchSel.AddInteractionPunch(0.25f);
-        if (_isSwitchAnimating)
-            return false;
+        if (_switchAnimation != null)
+            StopCoroutine(_switchAnimation);
         Audio.PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.ButtonPress, transform);
         _switchState = !_switchState;
-        StartCoroutine(AnimateSwitch());
+        _switchAnimation = StartCoroutine(AnimateSwitch(_switchState));
         if (_moduleSolved || !_isActivated || !_sequencePlaying)
             return false;
         if (!_actionExpected && _sequencePlaying)
@@ -654,19 +666,23 @@ public class BombItScript : MonoBehaviour
         return false;
     }
 
-    private IEnumerator AnimateSwitch()
+    private IEnumerator AnimateSwitch(bool state)
     {
-        _isSwitchAnimating = true;
         var duration = 0.2f;
         var elapsed = 0f;
+        var startAngle = SwitchObj.transform.localEulerAngles.x;
+        var goalAngle = state ? -60f : 60f;
+        if (startAngle - goalAngle > 180f)
+            goalAngle += 360f;
+        if (goalAngle - startAngle > 180f)
+            startAngle += 360f;
         while (elapsed < duration)
         {
-            SwitchObj.transform.localEulerAngles = new Vector3(Easing.InOutQuad(elapsed, _switchState ? 60f : -60f, _switchState ? -60f : 60f, duration), 0f, 0f);
+            SwitchObj.transform.localEulerAngles = new Vector3(Easing.InOutQuad(elapsed, startAngle, goalAngle, duration), 0f, 0f);
             yield return null;
             elapsed += Time.deltaTime;
         }
-        SwitchObj.transform.localEulerAngles = new Vector3(_switchState ? -60f : 60f, 0f, 0f);
-        _isSwitchAnimating = false;
+        SwitchObj.transform.localEulerAngles = new Vector3(goalAngle, 0f, 0f);
     }
 
     private bool WirePress()
@@ -763,7 +779,9 @@ public class BombItScript : MonoBehaviour
         if (_currentSliderPos != i)
         {
             _currentSliderPos = i;
-            StartCoroutine(MoveSlider());
+            if (_sliderAnimation != null)
+                StopCoroutine(_sliderAnimation);
+            _sliderAnimation = StartCoroutine(MoveSlider(_currentSliderPos));
             if (_moduleSolved || !_isActivated || !_sequencePlaying)
                 return;
             if (!_actionExpected && _sequencePlaying)
@@ -809,19 +827,20 @@ public class BombItScript : MonoBehaviour
         }
     }
 
-    private IEnumerator MoveSlider()
+    private IEnumerator MoveSlider(int goal)
     {
         Audio.PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.ButtonPress, transform);
-        var pos = SliderObj.transform.localPosition;
+        var startPos = SliderObj.transform.localPosition.x;
+        var goalPos = goal == 0 ? -0.02f : 0.02f;
         var duration = 0.15f;
         var elapsed = 0f;
         while (elapsed < duration)
         {
-            SliderObj.transform.localPosition = new Vector3(Easing.InOutQuad(elapsed, pos.x, _currentSliderPos == 0 ? -0.02f : 0.02f, duration), 0f, 0f);
+            SliderObj.transform.localPosition = new Vector3(Easing.InOutQuad(elapsed, startPos, goalPos, duration), 0f, 0f);
             yield return null;
             elapsed += Time.deltaTime;
         }
-        SliderObj.transform.localPosition = new Vector3(_currentSliderPos == 0 ? -0.02f : 0.02f, 0f, 0f);
+        SliderObj.transform.localPosition = new Vector3(goalPos, 0f, 0f);
     }
 
     private void PlayKick()
@@ -887,7 +906,7 @@ public class BombItScript : MonoBehaviour
                     _inputActions.Add(BombItAction.TiltIt);
                     Audio.PlaySoundAtTransform("Tilt", transform);
                 }
-                yield return new WaitForSeconds(0.02f);
+                yield return new WaitForSeconds(0.015f);
             }
             yield return new WaitForSeconds(0.1f);
             _actionExpected = false;

@@ -2827,6 +2827,7 @@ MonoBehaviour:
   FlagObj: {fileID: 0}
   FlagTextures: []
   IsTranslatedModule: 0
+  EditorLanguageCode: 
   StatusLightSel: {fileID: 114970806334219962}
   Background: {fileID: 1001772690143752}
   ButtonSel: {fileID: 114355013558949316}

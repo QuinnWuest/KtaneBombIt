@@ -17,6 +17,7 @@ public class BombItScript : MonoBehaviour
     public GameObject FlagObj;
     public Texture[] FlagTextures;
     public bool IsTranslatedModule;
+    public string EditorLanguageCode;
     private bool IsForcedMission;
 
     private int _moduleId;
@@ -178,7 +179,7 @@ public class BombItScript : MonoBehaviour
 
         ["PL"] = new BombItLanguage
         {
-            // Zbombarduj to!
+            // Bomba!
             LanguageName = "Polish",
             FileCode = "PL",
             ActionNames = new string[]
@@ -196,7 +197,7 @@ public class BombItScript : MonoBehaviour
 
         ["EO"] = new BombItLanguage
         {
-            // Bombu!
+            // Bombo!
             LanguageName = "Esperanto",
             FileCode = "EO",
             ActionNames = new string[]
@@ -214,7 +215,7 @@ public class BombItScript : MonoBehaviour
 
         ["BG"] = new BombItLanguage
         {
-            // Бомбардирай!
+            // Бомба!
             LanguageName = "Bulgarian",
             FileCode = "BG",
             ActionNames = new string[]
@@ -225,12 +226,31 @@ public class BombItScript : MonoBehaviour
                 "Плъзни!",
                 "Наклони!"
             },
-            SolveIt = "Обезвреди!"
+            SolveIt = "Обезвреди!",
+            SolveLines = new[] { "Браво!", "Добре!", "Стана!", "Браво бе, соло сапьор!", "Похвали се на експертите, ако имаш такива!" },
+            StrikeLines = new[] { "Неееее!", "Грешка!", "Опитай пак!", "Да не ни гръмнеш, ей!", "По дяволите!" },
+        },
+
+        ["PT-BR"] = new BombItLanguage
+        {
+            // Bomba!
+            LanguageName = "Portuguese (Brazil)",
+            FileCode = "PT-BR",
+            ActionNames = new string[]
+            {
+                "Aperte!",
+                "Vire!",
+                "Corte!",
+                "Arraste!",
+                "Gire!"
+            },
+            SolveIt = "Resolva!",
+            IsSupported = false
         },
 
         ["DE"] = new BombItLanguage
         {
-            // Bombardieren!
+            // Bombe!
             LanguageName = "German",
             FileCode = "DE",
             ActionNames = new string[]
@@ -245,27 +265,9 @@ public class BombItScript : MonoBehaviour
             IsSupported = false
         },
 
-        ["RU"] = new BombItLanguage
-        {
-            // Bomb It!
-            LanguageName = "Russian",
-            FileCode = "RU",
-            ActionNames = new string[]
-            {
-                "Press it!",
-                "Flip it!",
-                "Snip it!",
-                "Slide it!",
-                "Tilt it!"
-            },
-            SolveIt = "Solve it!",
-            VoiceSets = new string[] { "Rand", "Megum", "Termet" },
-            IsSupported = false
-        },
-
         ["ES"] = new BombItLanguage
         {
-            // Bombealo!
+            // Bomba!
             LanguageName = "Spanish",
             FileCode = "ES",
             ActionNames = new string[]
@@ -282,7 +284,7 @@ public class BombItScript : MonoBehaviour
 
         ["TR"] = new BombItLanguage
         {
-            // Bombala!
+            // Bomba!
             LanguageName = "Turkish",
             FileCode = "TR",
             ActionNames = new string[]
@@ -299,7 +301,7 @@ public class BombItScript : MonoBehaviour
 
         ["NL"] = new BombItLanguage
         {
-            // Bombarderen!
+            // Bom!
             LanguageName = "Dutch",
             FileCode = "NL",
             ActionNames = new string[]
@@ -316,7 +318,7 @@ public class BombItScript : MonoBehaviour
 
         ["SV"] = new BombItLanguage
         {
-            // Bomba den!
+            // Bomba!
             LanguageName = "Swedish",
             FileCode = "SV",
             ActionNames = new string[]
@@ -366,6 +368,14 @@ public class BombItScript : MonoBehaviour
 
         string langCode;
         BombItLanguage setup;
+
+        if (Application.isEditor)
+        {
+            if (Languages.TryGetValue(EditorLanguageCode, out setup) && !setup.IsEnglish)
+                return setup;
+            Debug.LogWarningFormat("<Bomb It Translated #{0}> Invalid language code: {1}. Picking random language.", _moduleId, EditorLanguageCode.Length == 0 ? "null" : EditorLanguageCode);
+            return Languages.Values.Where(i => i.IsSupported && !i.IsEnglish).PickRandom();
+        }
 
         // Force language if on preset mission.
         var missionID = GetMissionID();
@@ -434,7 +444,11 @@ public class BombItScript : MonoBehaviour
         CurrentLanguage = GetLanguage();
 
         if (IsTranslatedModule)
+        {
             FlagObj.GetComponent<MeshRenderer>().material.mainTexture = FlagTextures[Array.IndexOf(FlagTextures.Select(i => i.name).ToArray(), CurrentLanguage.FileCode)];
+            FlagObj.SetActive(true);
+        }
+
         // Set up UI elements
         _moduleName = IsTranslatedModule ? "Bomb It! Translated" : "Bomb It!";
         _actionNames = CurrentLanguage.ActionNames.ToArray();
@@ -444,8 +458,6 @@ public class BombItScript : MonoBehaviour
             Debug.LogFormat("[{0} #{1}] Twitch Plays activated. Choosing random language...", _moduleName, _moduleId);
         Debug.LogFormat("[{0} #{1}] Loaded module in {2} language.", _moduleName, _moduleId, CurrentLanguage.LanguageName);
 
-        if (IsTranslatedModule)
-            FlagObj.SetActive(true);
         _isActivated = true;
     }
 
@@ -588,7 +600,7 @@ public class BombItScript : MonoBehaviour
         _actionSatisfied = true;
         _actionExpected = false;
         _actionExpectedAutosolve = false;
-        Audio.PlaySoundAtTransform("Press", transform);
+        Audio.PlaySoundAtTransform("PressSFX", transform);
         return false;
     }
 
@@ -662,7 +674,7 @@ public class BombItScript : MonoBehaviour
         _actionSatisfied = true;
         _actionExpected = false;
         _actionExpectedAutosolve = false;
-        Audio.PlaySoundAtTransform("Flip", transform);
+        Audio.PlaySoundAtTransform("FlipSFX", transform);
         return false;
     }
 
@@ -735,7 +747,7 @@ public class BombItScript : MonoBehaviour
             _voicelinePlayed = false;
             return false;
         }
-        Audio.PlaySoundAtTransform("Snip", transform);
+        Audio.PlaySoundAtTransform("SnipSFX", transform);
         _actionSatisfied = true;
         _actionExpected = false;
         _actionExpectedAutosolve = false;
@@ -819,7 +831,7 @@ public class BombItScript : MonoBehaviour
                 _voicelinePlayed = false;
                 return;
             }
-            Audio.PlaySoundAtTransform("Slide", transform);
+            Audio.PlaySoundAtTransform("SlideSFX", transform);
             _actionSatisfied = true;
             _actionExpected = false;
             _actionExpectedAutosolve = false;
@@ -904,7 +916,7 @@ public class BombItScript : MonoBehaviour
                 {
                     _actionSatisfied = true;
                     _inputActions.Add(BombItAction.TiltIt);
-                    Audio.PlaySoundAtTransform("Tilt", transform);
+                    Audio.PlaySoundAtTransform("TiltSFX", transform);
                 }
                 yield return new WaitForSeconds(0.015f);
             }

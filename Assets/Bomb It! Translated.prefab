@@ -2575,8 +2575,7 @@ MonoBehaviour:
   m_Script: {fileID: -289456416, guid: 45b809be76fd7a3468b6f517bced6f28, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Settings: "{ \t \t \t\"language\": \"ja\", \t\"note\": \"Set Bomb It! Translated
-    language. Supported languages: ja, pl, eo, bg\" }"
+  Settings: 
   SettingsPath: 
 --- !u!114 &114314067710094618
 MonoBehaviour:
@@ -3117,6 +3116,7 @@ MonoBehaviour:
   - {fileID: 2800000, guid: e1603c4e7537bc046912dd1011a29ce5, type: 3}
   - {fileID: 2800000, guid: 989c8b3673c4c4540af6b37d69278299, type: 3}
   IsTranslatedModule: 1
+  EditorLanguageCode: 
   StatusLightSel: {fileID: 114874935867300420}
   Background: {fileID: 1570232262315442}
   ButtonSel: {fileID: 114051206618123878}

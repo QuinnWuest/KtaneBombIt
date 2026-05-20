@@ -20247,12 +20247,28 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 21eec1beea034824da1d8a5d4ab4c825, type: 3}
   - {fileID: 8300000, guid: 75070905a095a7b46bcc3d0987c74fa5, type: 3}
   - {fileID: 8300000, guid: 0e6fbe593add8354cb231e24faaa2751, type: 3}
+  - {fileID: 8300000, guid: 58a3df7cb24d56548aa7999ef50d7033, type: 3}
+  - {fileID: 8300000, guid: 6a53c37beae52a646a52188371b5250f, type: 3}
+  - {fileID: 8300000, guid: c3134e4ede3a6ad4e91f3e0108954fd2, type: 3}
+  - {fileID: 8300000, guid: 579f90080da7e894999490794ee3f9fe, type: 3}
+  - {fileID: 8300000, guid: 9ca9c0b21ef92874bb5054c9fbdd33d8, type: 3}
+  - {fileID: 8300000, guid: 7f2bd6de4f4039449a473b270190ed39, type: 3}
+  - {fileID: 8300000, guid: 6cda7b1bed3f5a745b8d0a66f8870f86, type: 3}
+  - {fileID: 8300000, guid: cd8e07c3578bde140b9f095738cc9873, type: 3}
+  - {fileID: 8300000, guid: ba43cd2993b14f9488afc6115bc9bdd4, type: 3}
+  - {fileID: 8300000, guid: 1bb3f751c5be932419e26a629377cc39, type: 3}
+  - {fileID: 8300000, guid: 6989e22b65a16a34e82c44a456add45a, type: 3}
+  - {fileID: 8300000, guid: cddf7f2b37e9c664298f4b8e63eca997, type: 3}
+  - {fileID: 8300000, guid: acfb62195e01c9b46afb123fdcbee35d, type: 3}
+  - {fileID: 8300000, guid: 9f1ec28dc0e8e3646b91025721a30ba6, type: 3}
+  - {fileID: 8300000, guid: 0e13f2b1b964f4448b2a54cfb3c93778, type: 3}
+  - {fileID: 8300000, guid: 1159ae1909d18244596b1b8d2284117b, type: 3}
   StrikeCount: 100
   TimeLimit: 6000
   BombSize: 1
   FrontFaceOnly: 1
   EdgeworkConfiguration: {fileID: 0}
-  TwitchPlaysActive: 0
+  TwitchPlaysActive: 1
   TwitchPlaysMode: 0
   turnSpeed: 128
   panSpeed: 4

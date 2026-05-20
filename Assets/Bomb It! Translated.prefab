@@ -3115,8 +3115,9 @@ MonoBehaviour:
   - {fileID: 2800000, guid: f66c152c7c1f3c149b53d75bfacf8d87, type: 3}
   - {fileID: 2800000, guid: e1603c4e7537bc046912dd1011a29ce5, type: 3}
   - {fileID: 2800000, guid: 989c8b3673c4c4540af6b37d69278299, type: 3}
+  - {fileID: 2800000, guid: 486a4a8b2c79ffe41b69d693bd49bb79, type: 3}
   IsTranslatedModule: 1
-  EditorLanguageCode: 
+  EditorLanguageCode: FR
   StatusLightSel: {fileID: 114874935867300420}
   Background: {fileID: 1570232262315442}
   ButtonSel: {fileID: 114051206618123878}

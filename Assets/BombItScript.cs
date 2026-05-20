@@ -133,7 +133,7 @@ public class BombItScript : MonoBehaviour
                     ["Key"] = "LanguageCode",
                     ["Text"] = "LanguageCode",
                     ["Type"] = "Dropdown",
-                    ["DropdownItems"] = new List<object> { "BG", "EO", "JA", "PL", "Random"}
+                    ["DropdownItems"] = new List<object> { "BG", "EO", "FR", "JA", "PL", "Random"}
                 },
             }}
         }
@@ -229,6 +229,24 @@ public class BombItScript : MonoBehaviour
             SolveIt = "Обезвреди!",
             SolveLines = new[] { "Браво!", "Добре!", "Стана!", "Браво бе, соло сапьор!", "Похвали се на експертите, ако имаш такива!" },
             StrikeLines = new[] { "Неееее!", "Грешка!", "Опитай пак!", "Да не ни гръмнеш, ей!", "По дяволите!" },
+        },
+
+        ["FR"] = new BombItLanguage
+        {
+            // Бомба!
+            LanguageName = "French",
+            FileCode = "FR",
+            ActionNames = new string[]
+            {
+                "Appuie!",
+                "Bascule!",
+                "Coupe!",
+                "Coulisse!",
+                "Penche!"
+            },
+            SolveIt = "Désamorce!",
+            SolveLines = new[] { "Célèbre!", "Mes félicitations, Agent!", "Et c'est dans la boîte!", "Quelle maîtrise!", "Kamoulox!" },
+            StrikeLines = new[] { "Je regrette, mais c'est non!", "Heh... Feur!", "Réessaye!", "Tu as activé ma Carte Piège!", "Et ça fait Bim Bam Boum!" },
         },
 
         ["PT-BR"] = new BombItLanguage
